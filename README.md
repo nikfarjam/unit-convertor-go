@@ -18,7 +18,6 @@ This project is a simple unit conversion service that provides an API for conver
 
 - [Go](https://golang.org/dl/)
 - [curl](https://curl.se/download.html)
-- Docker
 
 ### Installation
 
@@ -29,50 +28,87 @@ This project is a simple unit conversion service that provides an API for conver
    cd unit-convertor-go
    ```
 
-2. Initialize project `make init`
-3. Test `make test`
-4. Build project `make build`
-5. Run application `./bin/unit-convertor-go`
+2. Project setup and usage via Makefile:
 
-### Example Usage
+| Command | Description |
+| -------------------- | ----------------------------------------- |
+| `make init` | Initialize Go modules |
+| `make build` | Build the binary in `./bin/` |
+| `make run` | Run the application |
+| `make test` | Run all tests |
+| `make coverage-html` | Generate HTML coverage report |
+| `make coverage-ci` | Output total coverage (CI) |
+| `make coverage-codecov` | Generate Codecov coverage file |
+| `make lint` | Verify modules and format code |
+| `make docker-image` | Build Docker image |
+| `make clean` | Clean build and coverage files |
 
-Here are some example curl commands to interact with the API:
+1. Run application:
+
+   ```bash
+   make build
+   ./bin/unit-convertor-go
+   ```
+
+### API Usage
+
+The API exposes a single endpoint:
+
+- **POST** `/converter`
+   - Request body (JSON):
+      - `value`: number (temperature value)
+      - `from`: "CELSIUS" or "FAHRENHEIT" (case-insensitive)
+      - `to`: "CELSIUS" or "FAHRENHEIT" (case-insensitive)
+
+#### Example curl commands
 
 **Convert Celsius to Fahrenheit:**
 
-   ```bash
-   curl -d "{ \"value\": 25, \"from\": \"CELSIUS\", \"to\": \"FAHRENHEIT\" }" http://localhost:9090/converter
-   ```
+```bash
+curl -d '{ "value": 25, "from": "CELSIUS", "to": "FAHRENHEIT" }' http://localhost:9090/converter
+```
 
 **Convert Fahrenheit to Celsius:**
 
-   ```bash
-   curl -d "{ \"value\": 77, \"from\": \"FAHRENHEIT\", \"to\": \"CELSIUS\" }" http://localhost:9090/converter
-   ```
+```bash
+curl -d '{ "value": 77, "from": "FAHRENHEIT", "to": "CELSIUS" }' http://localhost:9090/converter
+```
 
-**Invalid Unit:**
+**Invalid Unit (returns error):**
 
-  ```bash
-  curl -v -d "{ \"value\": 20, \"from\": \"Kelvin\", \"to\": \"Celsius\" }" http://localhost:9090/converter
-  ```
+```bash
+curl -v -d '{ "value": 20, "from": "Kelvin", "to": "Celsius" }' http://localhost:9090/converter
+```
+
+#### Error Handling
+
+- If `from` or `to` is not "CELSIUS" or "FAHRENHEIT", the API returns HTTP 400 with an error message.
+- If the request body is malformed, the API returns HTTP 400.
 
 ### Using the client.sh Script
 
-The `client.sh` script provides a convenient way to interact with the API from the command line.
+The `client.sh` script is a simple CLI tool for calling the API.
 
 **Usage:**
 
-  ```bash
-  chmod +x client.sh
-  [client.sh](http://_vscodecontentref_/0) [F|C] [degree_value]
-  ```
+```bash
+chmod +x client.sh
+./client.sh [F|C] [degree_value]
+```
 
-- F: Convert Celsius to Fahrenheit.
-- C: Convert Fahrenheit to Celsius.
-- degree_value: The temperature value to convert.
-Examples:
+- `F`: Convert Fahrenheit to Celsius (input is Fahrenheit)
+- `C`: Convert Celsius to Fahrenheit (input is Celsius)
+- `degree_value`: Numeric temperature value to convert
 
-  ```bash
-  client.sh F 77
-  client.sh C 25
-  ```
+**Examples:**
+
+```bash
+./client.sh F 77
+./client.sh C 25
+```
+
+If you provide an invalid unit or a non-numeric value, the script will print an error and exit.
+
+## License
+
+This project is licensed under the Apache-2.0 License.
