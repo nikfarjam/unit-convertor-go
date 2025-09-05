@@ -2,9 +2,7 @@ name: Build Unit Converter API
 
 on:
   pull_request:
-    branches: [ "main", "develop" ]
   push:
-    branches: [ "feature/add-ci-script" ]
 
 jobs:
 
@@ -43,6 +41,7 @@ jobs:
   docker-build-and-push:
     needs: ["code-quality", "build"]
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
     steps:
     - name: Set up Docker
       uses: docker/setup-docker-action@v4
@@ -88,25 +87,21 @@ jobs:
       uses: docker/build-push-action@v6.18.0
       with:
         context: .
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64,linux/arm64,linux/arm/v7
         push: true
         tags: ${{ env.tags }}
 
   tag-branch:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     permissions:
       contents: write
     steps:
     - uses: actions/checkout@v5      
     - name: Tag branch
-      if: github.ref == 'refs/heads/feature/add-ci-script'
       run: |
-        if [[ "${GITHUB_REF}" == refs/heads/develop ]]; then
-          api_version="$(cat version)-alpha"
-        else
-          api_version="$(cat version)"
-        fi
+        api_version="$(cat version)"
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git tag "${api_version}"
