@@ -16,11 +16,12 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o api-server main.go
 FROM build-stage AS run-test-stage
 RUN go test -v ./...
 
-FROM alpine:3.22 AS build-release-stage
+FROM alpine:3.22 AS run-stage
 
 WORKDIR /
 
-RUN adduser -D -u 1001 nonroot
+RUN apk update --no-cache && apk upgrade && \
+    adduser -D -u 1001 nonroot
 USER nonroot:nonroot
 
 COPY --from=build-stage /app/api-server /api-server
