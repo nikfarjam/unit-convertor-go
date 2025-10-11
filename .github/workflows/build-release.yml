@@ -102,6 +102,10 @@ jobs:
     - name: Tag branch
       run: |
         api_version="$(cat version)"
+        if git rev-parse "${api_version}" >/dev/null 2>&1; then
+          echo "Tag ${api_version} already exists. Skipping tag creation."
+          exit 0
+        fi
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git tag "${api_version}"
