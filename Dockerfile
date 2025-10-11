@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Build the application from source
-FROM golang:1.25.0 AS build-stage
+FROM golang:1.25.2-alpine AS build-stage
 
 WORKDIR /app
 
@@ -16,11 +16,12 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o api-server main.go
 FROM build-stage AS run-test-stage
 RUN go test -v ./...
 
-FROM alpine:3.22 AS run-stage
+FROM alpine:3.22.2 AS run-stage
 
 WORKDIR /
 
 RUN apk update --no-cache && apk upgrade && \
+    rm -rf /var/cache/apk/* && \
     adduser -D -u 1001 nonroot
 USER nonroot:nonroot
 
