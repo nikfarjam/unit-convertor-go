@@ -42,7 +42,7 @@ jobs:
 
   docker-build-arm:
     needs: ["code-quality", "build"]
-    runs-on: ubuntu-24.04-arm
+    runs-on: ["ubuntu-24.04-arm", "ubuntu-24.04"]
     permissions:
       packages: write
       contents: read
