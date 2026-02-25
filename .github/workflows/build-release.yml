@@ -41,8 +41,11 @@ jobs:
       run: make build
 
   docker-build-arm:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
     needs: ["code-quality", "build"]
-    runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
