@@ -26,7 +26,9 @@ lint:
 	go fmt ./...
 
 docker-image:
-	docker build -t unit-converter-api:$(shell date -I) -f Dockerfile .
+	# pass ARCH if you need a specific architecture (e.g. ARCH=arm64/)
+	# defaults to empty which results in standard images (amd64 on most hosts)
+	docker build --build-arg ARCH=$(ARCH) -t unit-converter-api:$(shell date -I) -f Dockerfile .
 	@echo "\nDocker image 'unit-converter-api:$(shell date -I)' built successfully."
 
 clean:

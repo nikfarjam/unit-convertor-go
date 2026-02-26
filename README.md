@@ -40,7 +40,7 @@ This project is a simple unit conversion service that provides an API for conver
 | `make coverage-ci` | Output total coverage (CI) |
 | `make coverage-codecov` | Generate Codecov coverage file |
 | `make lint` | Verify modules and format code |
-| `make docker-image` | Build Docker image |
+| `make docker-image` | Build Docker image (you can set `ARCH` to your machine architecture; e.g. `make docker-image ARCH=arm64/`) |
 | `make clean` | Clean build and coverage files |
 
 1. Run application:
