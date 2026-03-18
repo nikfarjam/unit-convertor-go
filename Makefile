@@ -1,3 +1,5 @@
+IMAGE_TAG ?= unit-converter-api-lightweight:$(shell date -I)
+
 init:
 	go mod tidy
 
@@ -25,12 +27,12 @@ lint:
 	go mod verify
 	go fmt ./...
 
-docker-image:
-	docker build -t unit-converter-api:$(shell date -I) -f Dockerfile .
-	@echo "\nDocker image 'unit-converter-api:$(shell date -I)' built successfully."
+build-image:
+	@echo "\nBuild Docker image '$(IMAGE_TAG)'."
+	docker build -t $(IMAGE_TAG) -f Dockerfile .
 
 clean:
 	rm -rf ./bin
 	rm -f coverage.out
 
-.PHONY: init build run test coverage lint docker-image clean
+.PHONY: init build run test coverage lint build-image clean
