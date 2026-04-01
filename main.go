@@ -15,12 +15,14 @@ import (
 func main() {
 	initLogger()
 	http.HandleFunc("/converter", converterHandler)
+	http.HandleFunc("/version", versionHandler)
 	addr := ":9090"
-	fmt.Printf("Server is running on http://localhost%s\n", addr)
-	slog.Warn("Server is running on http://localhost" + addr)
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		slog.Error("Error starting server", "error", err)
+		os.Exit(1)
 	}
+	fmt.Printf("Server is running on http://localhost%s\n", addr)
+	slog.Warn("Server is running on http://localhost" + addr)
 }
 
 func getLogLevel() slog.Level {
@@ -110,4 +112,22 @@ func converterHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "not able to process request", http.StatusInternalServerError)
 		return
 	}
+}
+
+func versionHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	slog.Debug("Received request", "method", r.Method, "path", r.URL.Path)
+	version, err := os.ReadFile("version")
+	if err != nil {
+		slog.Error("Error: not able to read version file", "error", err)
+		http.Error(w, "not able to read version file", http.StatusInternalServerError)
+		return
+	}
+	_, err = w.Write(version)
+	if err != nil {
+		slog.Error("Error: not able to write response", "error", err)
+		http.Error(w, "not able to write response", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
