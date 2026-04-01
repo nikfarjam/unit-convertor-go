@@ -22,11 +22,14 @@ WORKDIR /
 
 RUN apk update --no-cache && apk upgrade && \
     rm -rf /var/cache/apk/* && \
-    adduser -D -u 1001 nonroot
-USER nonroot:nonroot
+    adduser -D -u 1001 app
+USER app:app
 
 COPY --from=build-stage /app/api-server /api-server
 
+ENV LOG_LEVEL=INFO \
+    LOG_OUTPUT=FILE \
+    LOG_FILE_PATH=/log/app.log
 EXPOSE 9090
 
 ENTRYPOINT ["/api-server"]

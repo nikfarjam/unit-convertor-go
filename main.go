@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/nikfarjam/unit-convertor-go/pkg/converter"
@@ -14,6 +16,7 @@ func main() {
 	initLogger()
 	http.HandleFunc("/converter", converterHandler)
 	addr := ":9090"
+	fmt.Printf("Server is running on http://localhost%s\n", addr)
 	slog.Warn("Server is running on http://localhost" + addr)
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		slog.Error("Error starting server", "error", err)
@@ -37,7 +40,33 @@ func getLogLevel() slog.Level {
 }
 
 func initLogger() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	logOutput := os.Getenv("LOG_OUTPUT")
+	writer := os.Stdout
+	if strings.ToUpper(logOutput) == "FILE" {
+		logPath := os.Getenv("LOG_FILE_PATH")
+		if logPath == "" {
+			logPath = "app.log"
+		}
+		if !strings.HasSuffix(logPath, ".log") {
+			if !strings.HasSuffix(logPath, "/") {
+				logPath += "/"
+			}
+			logPath += "app.log"
+		}
+
+		dir := filepath.Dir(logPath)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			fmt.Printf("Error creating log directory: %v, defaulting to stdout\n", err)
+		} else {
+			file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+			if err != nil {
+				fmt.Printf("Error opening log file: %v, defaulting to stdout\n", err)
+			} else {
+				writer = file
+			}
+		}
+	}
+	logger := slog.New(slog.NewJSONHandler(writer, &slog.HandlerOptions{
 		Level: getLogLevel(),
 	}))
 	slog.SetDefault(logger)
