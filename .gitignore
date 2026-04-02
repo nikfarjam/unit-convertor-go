@@ -33,3 +33,4 @@ go.work.sum
 bin/
 *.log
 .vscode/launch.json
+unit-convertor-go
