@@ -1,16 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 	"testing"
 )
-
-func TestVersionHandler(t *testing.T) {
-	// This test is a placeholder. In a real-world scenario, you would use an HTTP testing library
-	// to send a request to the versionHandler and verify the response.
-	fmt.Println("TestVersionHandler is not implemented yet.")
-}
 
 func TestGetLogLevel(t *testing.T) {
 	tests := []struct {
