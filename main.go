@@ -44,36 +44,41 @@ func getLogLevel() slog.Level {
 }
 
 func initLogger() {
-	logOutput := os.Getenv("LOG_OUTPUT")
-	writer := os.Stdout
-	if strings.ToUpper(logOutput) == "FILE" {
-		logPath := os.Getenv("LOG_FILE_PATH")
-		if logPath == "" {
-			logPath = "app.log"
-		}
-		if !strings.HasSuffix(logPath, ".log") {
-			if !strings.HasSuffix(logPath, "/") {
-				logPath += "/"
-			}
-			logPath += "app.log"
-		}
-
-		dir := filepath.Dir(logPath)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			fmt.Printf("Error creating log directory: %v, defaulting to stdout\n", err)
-		} else {
-			file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-			if err != nil {
-				fmt.Printf("Error opening log file: %v, defaulting to stdout\n", err)
-			} else {
-				writer = file
-			}
-		}
-	}
-	logger := slog.New(slog.NewJSONHandler(writer, &slog.HandlerOptions{
+	logger := slog.New(slog.NewJSONHandler(getLogWriter(), &slog.HandlerOptions{
 		Level: getLogLevel(),
 	}))
 	slog.SetDefault(logger)
+}
+
+func getLogWriter() *os.File {
+	logOutput := os.Getenv("LOG_OUTPUT")
+
+	if strings.ToUpper(logOutput) != "FILE" {
+		return os.Stdout
+	}
+
+	logPath := os.Getenv("LOG_FILE_PATH")
+	if logPath == "" {
+		logPath = "app.log"
+	} else if !strings.HasSuffix(logPath, ".log") {
+		if !strings.HasSuffix(logPath, "/") {
+			logPath += "/"
+		}
+		logPath += "app.log"
+	}
+
+	dir := filepath.Dir(logPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		fmt.Printf("Error creating log directory: %v, defaulting to stdout\n", err)
+	} else {
+		file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		if err != nil {
+			fmt.Printf("Error opening log file: %v, defaulting to stdout\n", err)
+		} else {
+			return file
+		}
+	}
+	return os.Stdout
 }
 
 func converterHandler(w http.ResponseWriter, r *http.Request) {
