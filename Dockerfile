@@ -25,7 +25,7 @@ RUN apk update --no-cache && apk upgrade && \
     adduser -D -u 1001 app
 USER app:app
 
-COPY --from=build-stage /app/api-server /api-server
+COPY --from=build-stage /app/api-server /app/version /api-server/
 
 ENV LOG_LEVEL=INFO \
     LOG_OUTPUT=FILE \
