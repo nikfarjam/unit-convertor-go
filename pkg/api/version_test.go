@@ -4,41 +4,38 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 )
 
-var expectedVersion string
+var expectedVersion = "1.2.3"
 
-func setup() {
+func createTempVersionFile(content string) string {
 	version = nil
-	// Load the version from the project root version file
-	cwd, err := os.Getwd()
+
+	// Create a temp file with random name in os temp folder
+	tempFile, err := os.CreateTemp("", "version_*")
 	if err != nil {
-		panic("failed to get working directory: " + err.Error())
+		panic("failed to create temp file: " + err.Error())
+	}
+	defer tempFile.Close()
+
+	_, err = tempFile.Write([]byte(content))
+	if err != nil {
+		panic("failed to write to temp file: " + err.Error())
 	}
 
-	versionPath := filepath.Join(cwd, "..", "..", "version")
-	content, err := os.ReadFile(versionPath)
-	if err != nil {
-		panic("failed to read version file: " + err.Error())
-	}
+	return tempFile.Name()
+}
 
-	expectedVersion = strings.TrimSpace(string(content))
+func deleteTempVersionFile(path string) {
+	os.Remove(path)
 }
 
 func TestVersionHandler(t *testing.T) {
-	setup()
+	version = nil
+	versionFilePath := createTempVersionFile(expectedVersion)
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("failed to get current working directory: %v", err)
-	}
-
-	// The test package path is pkg/api; point to the project root version file explicitly.
-	projectVersionPath := filepath.Join(cwd, "..", "..", "version")
-	t.Setenv("UC_VERSION_PATH", projectVersionPath)
+	t.Setenv("UC_VERSION_PATH", versionFilePath)
 
 	req := httptest.NewRequest(http.MethodGet, "/version", nil)
 	w := httptest.NewRecorder()
@@ -52,11 +49,13 @@ func TestVersionHandler(t *testing.T) {
 	if got := w.Body.String(); got != expectedVersion {
 		t.Fatalf("expected body %q, got %q", expectedVersion, got)
 	}
+
+	deleteTempVersionFile(versionFilePath)
 }
 
 func TestLoadVersionNotFound(t *testing.T) {
 	version = nil
-	t.Setenv("UC_VERSION_PATH", "")
+	t.Setenv("UC_VERSION_PATH", "does_not_exist_version_file")
 
 	result := loadVersion()
 
@@ -68,10 +67,9 @@ func TestLoadVersionNotFound(t *testing.T) {
 }
 
 func TestLoadVersion(t *testing.T) {
-	setup()
-	cwd, _ := os.Getwd()
-	versionPath := filepath.Join(cwd, "..", "..", "version")
-	t.Setenv("UC_VERSION_PATH", versionPath)
+	version = nil
+	versionFilePath := createTempVersionFile(expectedVersion)
+	t.Setenv("UC_VERSION_PATH", versionFilePath)
 
 	result := loadVersion()
 
@@ -80,14 +78,14 @@ func TestLoadVersion(t *testing.T) {
 			"should read version from UC_VERSION_PATH", expectedVersion, string(result))
 	}
 
+	deleteTempVersionFile(versionFilePath)
 }
 
 func TestLoadVersionCaching(t *testing.T) {
-	setup()
+	version = nil
 
-	cwd, _ := os.Getwd()
-	versionPath := filepath.Join(cwd, "..", "..", "version")
-	t.Setenv("UC_VERSION_PATH", versionPath)
+	versionFilePath := createTempVersionFile(expectedVersion)
+	t.Setenv("UC_VERSION_PATH", versionFilePath)
 
 	// First call: loads from file
 	firstCall := loadVersion()
@@ -105,4 +103,6 @@ func TestLoadVersionCaching(t *testing.T) {
 	if string(secondCall) != expectedVersion {
 		t.Errorf("cached value should match expected version: got %q, want %q", string(secondCall), expectedVersion)
 	}
+
+	deleteTempVersionFile(versionFilePath)
 }
