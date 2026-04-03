@@ -9,6 +9,9 @@ build:
 run:
 	go run main.go
 
+run-dev:
+	LOG_LEVEL=DEBUG go run main.go
+
 test:
 	go test -v ./...
 
@@ -35,4 +38,4 @@ clean:
 	rm -rf ./bin
 	rm -f coverage.out
 
-.PHONY: init build run test coverage lint build-image clean
+.PHONY: init build run run-dev test coverage-html coverage-ci coverage-codecov lint build-image clean
