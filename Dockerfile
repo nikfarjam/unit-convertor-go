@@ -7,6 +7,7 @@ WORKDIR /app
 
 COPY go.mod *.go ./
 COPY ./pkg ./pkg
+COPY ./version ./
 
 RUN go mod tidy
 
@@ -18,18 +19,20 @@ RUN go test -v ./...
 
 FROM alpine:3.23.3 AS run-stage
 
-WORKDIR /
+WORKDIR /app
 
 RUN apk update --no-cache && apk upgrade && \
+    apk cache clean && \
     rm -rf /var/cache/apk/* && \
-    adduser -D -u 1001 app
+    adduser -D -u 1001 app && \
+    mkdir -p /var/log/unit-converter && chown app:app /var/log/unit-converter
 USER app:app
 
-COPY --from=build-stage /app/api-server /app/version /api-server/
+COPY --from=build-stage /app/api-server /app/version /app/
 
 ENV LOG_LEVEL=INFO \
-    LOG_OUTPUT=FILE \
-    LOG_FILE_PATH=/log/app.log
+    LOG_OUTPUT=STANDARD \
+    LOG_FILE_PATH=/var/log/unit-converter/app.log
 EXPOSE 9090
 
-ENTRYPOINT ["/api-server"]
+ENTRYPOINT ["/app/api-server"]
