@@ -1,30 +1,34 @@
 # Unit Convertor
 
-An example serverless RESTful API written in GoLang
+A lightweight RESTful API written in Go for unit conversion
 
 ## Overview
 
-This project is a simple unit conversion service that provides an API for converting between temperature units (Fahrenheit and Celsius). It's designed to be lightweight and easy to deploy as a serverless application.
+This project is a simple temperature conversion service that provides RESTful API endpoints for converting between Fahrenheit and Celsius. It's designed to be lightweight, performant, and easy to deploy using Docker.
 
 ## Features
 
-- Converts between Fahrenheit and Celsius units.
-- RESTful API endpoints.
-- Written in GoLang for performance and simplicity.
+- Converts between Fahrenheit and Celsius units
+- RESTful API with JSON request/response
+- Version endpoint for API versioning
+- Structured logging with configurable levels
+- Docker containerization support
+- CLI client script for easy testing
 
 ## Getting Started
 
 ### Prerequisites
 
-- [Go](https://golang.org/dl/)
-- [curl](https://curl.se/download.html)
+- [Go](https://golang.org/dl/) (1.25 or later)
+- [curl](https://curl.se/download.html) (for API testing)
+- [Docker](https://www.docker.com/) (optional, for containerized deployment)
 
 ### Installation
 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/unit-convertor-go.git
+   git clone https://github.com/nikfarjam/unit-convertor-go.git
    cd unit-convertor-go
    ```
 
@@ -38,77 +42,158 @@ This project is a simple unit conversion service that provides an API for conver
 | `make run-dev` | Run the application with debug log |
 | `make test` | Run all tests |
 | `make coverage-html` | Generate HTML coverage report |
-| `make coverage-ci` | Output total coverage (CI) |
+| `make coverage-ci` | Output total coverage (CI/CD) |
 | `make coverage-codecov` | Generate Codecov coverage file |
 | `make lint` | Verify modules and format code |
 | `make build-image` | Build Docker image |
 | `make clean` | Clean build and coverage files |
 
-1. Run application:
+3. Run application:
 
    ```bash
    make build
    ./bin/unit-convertor-go
    ```
 
-### API Usage
+## API Documentation
 
-The API exposes a single endpoint:
+The API exposes two endpoints:
 
-- **POST** `/converter`
-   - Request body (JSON):
-      - `value`: number (temperature value)
-      - `from`: "CELSIUS" or "FAHRENHEIT" (case-insensitive)
-      - `to`: "CELSIUS" or "FAHRENHEIT" (case-insensitive)
+### POST `/converter`
+Converts temperature between Celsius and Fahrenheit.
 
-#### Example curl commands
-
-**Convert Celsius to Fahrenheit:**
-
-```bash
-curl -d '{ "value": 25, "from": "CELSIUS", "to": "FAHRENHEIT" }' http://localhost:9090/converter
+**Request Body (JSON):**
+```json
+{
+  "value": 25,
+  "from": "CELSIUS",
+  "to": "FAHRENHEIT"
+}
 ```
 
-**Convert Fahrenheit to Celsius:**
-
-```bash
-curl -d '{ "value": 77, "from": "FAHRENHEIT", "to": "CELSIUS" }' http://localhost:9090/converter
+**Response (JSON):**
+```json
+{
+  "value": 77,
+  "unit": "FAHRENHEIT"
+}
 ```
 
-**Invalid Unit (returns error):**
+**Example curl commands:**
 
+Convert Celsius to Fahrenheit:
 ```bash
-curl -v -d '{ "value": 20, "from": "Kelvin", "to": "Celsius" }' http://localhost:9090/converter
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"value": 25, "from": "CELSIUS", "to": "FAHRENHEIT"}' \
+  http://localhost:9090/converter
 ```
 
-#### Error Handling
+Convert Fahrenheit to Celsius:
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"value": 77, "from": "FAHRENHEIT", "to": "CELSIUS"}' \
+  http://localhost:9090/converter
+```
 
-- If `from` or `to` is not "CELSIUS" or "FAHRENHEIT", the API returns HTTP 400 with an error message.
-- If the request body is malformed, the API returns HTTP 400.
+### GET or POST `/version`
+Returns the current version of the API.
 
-### Using the client.sh Script
+**Response:** Plain text version string (e.g., "v1.1.0")
 
-The `client.sh` script is a simple CLI tool for calling the API.
+**Example:**
+```bash
+curl http://localhost:9090/version
+```
+
+## Error Handling
+
+- **400 Bad Request**: Invalid unit names (must be "CELSIUS" or "FAHRENHEIT"), malformed JSON, or invalid request structure
+- **500 Internal Server Error**: Server-side processing errors
+
+## Configuration
+
+The application supports the following environment variables:
+
+- `LOG_LEVEL`: Set logging level (DEBUG, INFO, WARN, ERROR) - default: INFO
+- `LOG_OUTPUT`: Log output destination (STANDARD or FILE) - default: STANDARD
+- `LOG_FILE_PATH`: Path for log file when LOG_OUTPUT=FILE - default: app.log
+- `UC_VERSION_PATH`: Path to version file - default: `./version`
+
+## Docker Deployment
+
+Build and run with Docker:
+
+```bash
+make build-image
+docker run -p 9090:9090 unit-converter-api-lightweight:$(date -I)
+```
+
+## Docker Hub Repository
+
+The Docker image is available on Docker Hub: [nikfarjam/unit-converter-api-lightweight](https://hub.docker.com/r/nikfarjam/unit-converter-api-lightweight)
+
+You can pull and run the image directly:
+
+```bash
+docker pull nikfarjam/unit-converter-api-lightweight:latest
+docker run -p 9090:9090 nikfarjam/unit-converter-api-lightweight:latest
+```
+
+## Using the Client Script
+
+The `client.sh` script provides a simple CLI interface for testing the API.
 
 **Usage:**
-
 ```bash
 chmod +x client.sh
 ./client.sh [F|C] [degree_value]
 ```
 
-- `F`: Convert Fahrenheit to Celsius (input is Fahrenheit)
-- `C`: Convert Celsius to Fahrenheit (input is Celsius)
-- `degree_value`: Numeric temperature value to convert
+- `F`: Convert from Fahrenheit to Celsius
+- `C`: Convert from Celsius to Fahrenheit
+- `degree_value`: Numeric temperature value
 
 **Examples:**
-
 ```bash
-./client.sh F 77
-./client.sh C 25
+./client.sh F 77    # Converts 77°F to Celsius
+./client.sh C 25    # Converts 25°C to Fahrenheit
 ```
 
-If you provide an invalid unit or a non-numeric value, the script will print an error and exit.
+## Development
+
+### Project Structure
+```
+.
+├── main.go                # Application entry point
+├── main_test.go           # Main package tests
+├── client.sh              # CLI client script
+├── Dockerfile             # Docker build configuration
+├── Makefile               # Build and development tasks
+├── go.mod                 # Go module definition
+├── version                # Version file
+├── pkg/
+│   ├── api/               # HTTP handlers
+│   │   ├── converter.go
+│   │   ├── converter_test.go
+│   │   ├── version.go
+│   │   └── version_test.go
+│   └── converter/         # Business logic
+│       ├── converter.go
+│       └── converter_test.go
+└── bin/                   # Build output directory
+```
+
+### Running Tests
+```bash
+make test                   # Run all tests
+make coverage-html          # Generate HTML coverage report
+make coverage-ci            # Get total coverage percentage
+```
+
+### Code Quality
+```bash
+make lint                   # Format code and verify modules
+```
 
 ## License
 
