@@ -35,12 +35,13 @@ This project is a simple unit conversion service that provides an API for conver
 | `make init` | Initialize Go modules |
 | `make build` | Build the binary in `./bin/` |
 | `make run` | Run the application |
+| `make run-dev` | Run the application with debug log |
 | `make test` | Run all tests |
 | `make coverage-html` | Generate HTML coverage report |
 | `make coverage-ci` | Output total coverage (CI) |
 | `make coverage-codecov` | Generate Codecov coverage file |
 | `make lint` | Verify modules and format code |
-| `make docker-image` | Build Docker image |
+| `make build-image` | Build Docker image |
 | `make clean` | Clean build and coverage files |
 
 1. Run application:
