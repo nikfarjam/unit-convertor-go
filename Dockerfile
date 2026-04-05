@@ -5,13 +5,12 @@ FROM golang:1.26.1-alpine3.23 AS build-stage
 
 WORKDIR /app
 
-COPY go.mod *.go ./
-COPY ./pkg ./pkg
-COPY ./version ./
+COPY go.mod go.sum ./
+RUN go mod download
 
-RUN go mod tidy
+COPY . ./
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o api-server main.go
+RUN go mod tidy && CGO_ENABLED=0 GOOS=linux go build -o api-server main.go
 
 # Run the tests in the container
 FROM build-stage AS run-test-stage
