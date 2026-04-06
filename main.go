@@ -14,7 +14,7 @@ import (
 func main() {
 	initLogger()
 	http.HandleFunc("/converter", api.ConverterHandler)
-	http.HandleFunc("/version", api.VersionHandler)
+	http.HandleFunc("GET /version", api.VersionHandler)
 	addr := ":9090"
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		slog.Error("Error starting server", "error", err)
