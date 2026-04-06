@@ -60,9 +60,11 @@ This project is a simple temperature conversion service that provides RESTful AP
 The API exposes two endpoints:
 
 ### POST `/converter`
+
 Converts temperature between Celsius and Fahrenheit.
 
 **Request Body (JSON):**
+
 ```json
 {
   "value": 25,
@@ -72,6 +74,7 @@ Converts temperature between Celsius and Fahrenheit.
 ```
 
 **Response (JSON):**
+
 ```json
 {
   "value": 77,
@@ -82,6 +85,7 @@ Converts temperature between Celsius and Fahrenheit.
 **Example curl commands:**
 
 Convert Celsius to Fahrenheit:
+
 ```bash
 curl -X POST -H "Content-Type: application/json" \
   -d '{"value": 25, "from": "CELSIUS", "to": "FAHRENHEIT"}' \
@@ -89,6 +93,7 @@ curl -X POST -H "Content-Type: application/json" \
 ```
 
 Convert Fahrenheit to Celsius:
+
 ```bash
 curl -X POST -H "Content-Type: application/json" \
   -d '{"value": 77, "from": "FAHRENHEIT", "to": "CELSIUS"}' \
@@ -96,11 +101,13 @@ curl -X POST -H "Content-Type: application/json" \
 ```
 
 ### GET or POST `/version`
+
 Returns the current version of the API.
 
 **Response:** Plain text version string (e.g., "v1.1.0")
 
 **Example:**
+
 ```bash
 curl http://localhost:9090/version
 ```
@@ -144,6 +151,7 @@ docker run -p 9090:9090 nikfarjam/unit-converter-api-lightweight:latest
 The `client.sh` script provides a simple CLI interface for testing the API.
 
 **Usage:**
+
 ```bash
 chmod +x client.sh
 ./client.sh [F|C] [degree_value]
@@ -154,6 +162,7 @@ chmod +x client.sh
 - `degree_value`: Numeric temperature value
 
 **Examples:**
+
 ```bash
 ./client.sh F 77    # Converts 77°F to Celsius
 ./client.sh C 25    # Converts 25°C to Fahrenheit
@@ -162,7 +171,8 @@ chmod +x client.sh
 ## Development
 
 ### Project Structure
-```
+
+```SHELL
 .
 ├── main.go                # Application entry point
 ├── main_test.go           # Main package tests
@@ -184,6 +194,7 @@ chmod +x client.sh
 ```
 
 ### Running Tests
+
 ```bash
 make test                   # Run all tests
 make coverage-html          # Generate HTML coverage report
@@ -191,6 +202,7 @@ make coverage-ci            # Get total coverage percentage
 ```
 
 ### Code Quality
+
 ```bash
 make lint                   # Format code and verify modules
 ```
