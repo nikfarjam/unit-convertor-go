@@ -100,7 +100,7 @@ curl -X POST -H "Content-Type: application/json" \
   http://localhost:9090/converter
 ```
 
-### GET or POST `/version`
+### GET `/version`
 
 Returns the current version of the API.
 
