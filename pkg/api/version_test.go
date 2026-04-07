@@ -1,16 +1,17 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 )
 
-var expectedVersion = "1.2.3"
+var testVersion = "1.2.3"
 
 func createTempVersionFile(content string) string {
-	version = nil
+	version = ""
 
 	// Create a temp file with random name in os temp folder
 	tempFile, err := os.CreateTemp("", "version_*")
@@ -32,8 +33,8 @@ func deleteTempVersionFile(path string) {
 }
 
 func TestVersionHandler(t *testing.T) {
-	version = nil
-	versionFilePath := createTempVersionFile(expectedVersion)
+	version = ""
+	versionFilePath := createTempVersionFile(testVersion)
 
 	t.Setenv("UC_VERSION_PATH", versionFilePath)
 
@@ -46,15 +47,19 @@ func TestVersionHandler(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
 	}
 
-	if got := w.Body.String(); got != expectedVersion {
-		t.Fatalf("expected body %q, got %q", expectedVersion, got)
+	var resp VersionResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	if resp.Version != testVersion {
+		t.Fatalf("expected version %q, got %q", testVersion, resp.Version)
 	}
 
 	deleteTempVersionFile(versionFilePath)
 }
 
 func TestLoadVersionNotFound(t *testing.T) {
-	version = nil
+	version = ""
 	t.Setenv("UC_VERSION_PATH", "does_not_exist_version_file")
 
 	result := loadVersion()
@@ -67,24 +72,24 @@ func TestLoadVersionNotFound(t *testing.T) {
 }
 
 func TestLoadVersion(t *testing.T) {
-	version = nil
-	versionFilePath := createTempVersionFile(expectedVersion)
+	version = ""
+	versionFilePath := createTempVersionFile(testVersion)
 	t.Setenv("UC_VERSION_PATH", versionFilePath)
 
 	result := loadVersion()
 
-	if string(result) != expectedVersion {
+	if string(result) != testVersion {
 		t.Errorf("%s: expected %q, got %q",
-			"should read version from UC_VERSION_PATH", expectedVersion, string(result))
+			"should read version from UC_VERSION_PATH", testVersion, string(result))
 	}
 
 	deleteTempVersionFile(versionFilePath)
 }
 
 func TestLoadVersionCaching(t *testing.T) {
-	version = nil
+	version = ""
 
-	versionFilePath := createTempVersionFile(expectedVersion)
+	versionFilePath := createTempVersionFile(testVersion)
 	t.Setenv("UC_VERSION_PATH", versionFilePath)
 
 	// First call: loads from file
@@ -100,8 +105,8 @@ func TestLoadVersionCaching(t *testing.T) {
 		t.Errorf("cached value should be returned on second call: first %q, second %q", string(firstCall), string(secondCall))
 	}
 
-	if string(secondCall) != expectedVersion {
-		t.Errorf("cached value should match expected version: got %q, want %q", string(secondCall), expectedVersion)
+	if string(secondCall) != testVersion {
+		t.Errorf("cached value should match expected version: got %q, want %q", string(secondCall), testVersion)
 	}
 
 	deleteTempVersionFile(versionFilePath)
