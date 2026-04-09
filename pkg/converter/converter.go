@@ -22,27 +22,39 @@ func NewConverterRequest(value float64, from string, to string) *ConverterReques
 
 type ConverterResponse struct {
 	Value float64 `json:"value"`
-	Unit  string  `json:"Unit"`
+	Unit  string  `json:"unit"`
 }
 
 func ConvertUnit(req ConverterRequest) (ConverterResponse, error) {
 	from := strings.ToUpper(req.From)
 	to := strings.ToUpper(req.To)
-	switch fmt.Sprintf("%v_%v", from, to) {
-	case "CELSIUS_FAHRENHEIT":
+
+	if from == to {
 		return ConverterResponse{
-			Value: roundFloat((req.Value*9/5)+32, 2),
+			Value: roundFloat(req.Value, 2),
 			Unit:  to,
 		}, nil
-	case "FAHRENHEIT_CELSIUS":
-		return ConverterResponse{
-			Value: roundFloat((req.Value-32)*5/9, 2),
-			Unit:  to,
-		}, nil
-	default:
-		return ConverterResponse{},
-			fmt.Errorf("error: form %s and to %s units are not valid", from, to)
 	}
+
+	switch from {
+	case "CELSIUS":
+		if to == "FAHRENHEIT" {
+			return ConverterResponse{
+				Value: roundFloat((req.Value*9/5)+32, 2),
+				Unit:  to,
+			}, nil
+		}
+	case "FAHRENHEIT":
+		if to == "CELSIUS" {
+			return ConverterResponse{
+				Value: roundFloat((req.Value-32)*5/9, 2),
+				Unit:  to,
+			}, nil
+		}
+	}
+
+	return ConverterResponse{},
+		fmt.Errorf("error: from %s and to %s units are not valid", from, to)
 }
 
 func roundFloat(val float64, precision uint) float64 {

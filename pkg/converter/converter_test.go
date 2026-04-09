@@ -46,6 +46,22 @@ func TestInvalidInput(t *testing.T) {
 	}
 }
 
+func TestSameUnitConversion(t *testing.T) {
+	req := NewConverterRequest(25, "CELSIUS", "CELSIUS")
+
+	resp, err := ConvertUnit(*req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.Unit != "CELSIUS" {
+		t.Fatalf("Expected resp.Unit to be 'CELSIUS' but it was %v", resp.Unit)
+	}
+	if resp.Value != 25 {
+		t.Fatalf("Expected resp.Value to be 25 but it was %v", resp.Value)
+	}
+}
+
 func almostEqual(v1, v2 float64) bool {
 	fmt.Printf("Diff: %v", Abs(v2-v1))
 	return Abs(v2-v1) < 0.001

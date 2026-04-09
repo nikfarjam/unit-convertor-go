@@ -58,6 +58,22 @@ func TestVersionHandler(t *testing.T) {
 	deleteTempVersionFile(versionFilePath)
 }
 
+func TestLoadVersionWithWhitespace(t *testing.T) {
+	version = ""
+	versionWithWhitespace := "  " + testVersion + "\n\n"
+	versionFilePath := createTempVersionFile(versionWithWhitespace)
+	t.Setenv("UC_VERSION_PATH", versionFilePath)
+
+	result := loadVersion()
+
+	if string(result) != testVersion {
+		t.Errorf("%s: expected %q, got %q",
+			"should read trimmed version from UC_VERSION_PATH", testVersion, string(result))
+	}
+
+	deleteTempVersionFile(versionFilePath)
+}
+
 func TestLoadVersionNotFound(t *testing.T) {
 	version = ""
 	t.Setenv("UC_VERSION_PATH", "does_not_exist_version_file")

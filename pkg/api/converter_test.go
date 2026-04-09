@@ -10,7 +10,7 @@ import (
 	"github.com/nikfarjam/unit-convertor-go/pkg/converter"
 )
 
-var api_url = "/convert"
+var api_url = "/converter"
 
 func TestConverterHandler_Success(t *testing.T) {
 	reqBody := converter.ConverterRequest{
