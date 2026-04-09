@@ -134,3 +134,32 @@ func TestConverterHandler_FahrenheitToCelsius(t *testing.T) {
 		t.Errorf("expected unit %s, got %s", "CELSIUS", resp.Unit)
 	}
 }
+
+func TestConverterHandler_BodyTooLarge(t *testing.T) {
+	// Create a large valid JSON body larger than 1MB
+	// {"value": 0, "from": "celsius", "to": "fahrenheit", "extra": "..."}
+	prefix := `{"value": 0, "from": "celsius", "to": "fahrenheit", "extra": "`
+	suffix := `"}`
+	size := 1024*1024 + 100
+	fillSize := size - len(prefix) - len(suffix)
+
+	largeBody := make([]byte, 0, size)
+	largeBody = append(largeBody, prefix...)
+	for i := 0; i < fillSize; i++ {
+		largeBody = append(largeBody, 'a')
+	}
+	largeBody = append(largeBody, suffix...)
+
+	req := httptest.NewRequest(http.MethodPost, api_url, bytes.NewReader(largeBody))
+	w := httptest.NewRecorder()
+
+	ConverterHandler(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
+
+	if w.Body.String() != "bad request\n" {
+		t.Errorf("expected body 'bad request', got %q", w.Body.String())
+	}
+}

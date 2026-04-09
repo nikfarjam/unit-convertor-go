@@ -10,7 +10,14 @@ import (
 )
 
 func ConverterHandler(w http.ResponseWriter, r *http.Request) {
+	// Limit request body size to 1MB to prevent DoS
+	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
 	defer r.Body.Close()
+
+	// Set security headers
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+
 	slog.Debug("Received request", "method", r.Method, "path", r.URL.Path)
 	dec := json.NewDecoder(r.Body)
 	req := &converter.ConverterRequest{}
