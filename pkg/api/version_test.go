@@ -11,7 +11,7 @@ import (
 var testVersion = "1.2.3"
 
 func createTempVersionFile(content string) string {
-	version = ""
+	cacheVersion = ""
 
 	// Create a temp file with random name in os temp folder
 	tempFile, err := os.CreateTemp("", "version_*")
@@ -33,7 +33,7 @@ func deleteTempVersionFile(path string) {
 }
 
 func TestVersionHandler(t *testing.T) {
-	version = ""
+	cacheVersion = ""
 	versionFilePath := createTempVersionFile(testVersion)
 
 	t.Setenv("UC_VERSION_PATH", versionFilePath)
@@ -58,8 +58,45 @@ func TestVersionHandler(t *testing.T) {
 	deleteTempVersionFile(versionFilePath)
 }
 
+func TestVersionHandlerCache(t *testing.T) {
+	cacheVersion = ""
+
+	versionFilePath := createTempVersionFile(testVersion)
+	t.Setenv("UC_VERSION_PATH", versionFilePath)
+
+	// First call: loads from file
+	req := httptest.NewRequest(http.MethodGet, "/version", nil)
+	w := httptest.NewRecorder()
+
+	VersionHandler(w, req)
+
+	var resp VersionResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	firstValue := resp.Version
+
+	// Change env var to invalid path
+	t.Setenv("UC_VERSION_PATH", "does_not_exist_version_file")
+
+	// Second call: should return cached value, not try to read from new path
+	req = httptest.NewRequest(http.MethodGet, "/version", nil)
+	w = httptest.NewRecorder()
+
+	VersionHandler(w, req)
+
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	secondValue := resp.Version
+
+	if firstValue != secondValue {
+		t.Errorf("cached value should be returned on second call: first %q, second %q", firstValue, secondValue)
+	}
+}
+
 func TestLoadVersionNotFound(t *testing.T) {
-	version = ""
+	cacheVersion = ""
 	t.Setenv("UC_VERSION_PATH", "does_not_exist_version_file")
 
 	result := loadVersion()
@@ -72,7 +109,7 @@ func TestLoadVersionNotFound(t *testing.T) {
 }
 
 func TestLoadVersion(t *testing.T) {
-	version = ""
+	cacheVersion = ""
 	versionFilePath := createTempVersionFile(testVersion)
 	t.Setenv("UC_VERSION_PATH", versionFilePath)
 
@@ -86,8 +123,8 @@ func TestLoadVersion(t *testing.T) {
 	deleteTempVersionFile(versionFilePath)
 }
 
-func TestLoadVersionCaching(t *testing.T) {
-	version = ""
+func TestLoadVersionDoNotCache(t *testing.T) {
+	cacheVersion = ""
 
 	versionFilePath := createTempVersionFile(testVersion)
 	t.Setenv("UC_VERSION_PATH", versionFilePath)
@@ -101,12 +138,12 @@ func TestLoadVersionCaching(t *testing.T) {
 	// Second call: should return cached value, not try to read from new path
 	secondCall := loadVersion()
 
-	if string(firstCall) != string(secondCall) {
-		t.Errorf("cached value should be returned on second call: first %q, second %q", string(firstCall), string(secondCall))
+	if firstCall != testVersion {
+		t.Errorf("first call should read version from file: got %q, want %q", firstCall, testVersion)
 	}
 
-	if string(secondCall) != testVersion {
-		t.Errorf("cached value should match expected version: got %q, want %q", string(secondCall), testVersion)
+	if secondCall != "Unknown" {
+		t.Errorf("second call should return Unknown due to invalid path, got %q", secondCall)
 	}
 
 	deleteTempVersionFile(versionFilePath)
