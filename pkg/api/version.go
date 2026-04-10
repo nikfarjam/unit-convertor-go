@@ -13,12 +13,14 @@ type VersionResponse struct {
 	Version string `json:"version"`
 }
 
-var versionRegexp = regexp.MustCompile(`^[0-9]+(\.[0-9]+)*([+-][A-Za-z0-9._-]+)?$`)
+var versionRegex = regexp.MustCompile(`^v?\d+(\.\d+)*(-[\w\.-]+)?$`)
 
 var cacheVersion string = ""
 
 func VersionHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	slog.Debug("Received request", "method", r.Method, "path", r.URL.Path)
 	if cacheVersion == "" {
 		cacheVersion = loadVersion()
@@ -45,7 +47,7 @@ func loadVersion() string {
 		return "Unknown"
 	}
 	version := strings.TrimSpace(string(versionValue))
-	if !versionRegexp.MatchString(version) {
+	if !versionRegex.MatchString(version) {
 		slog.Error("Error: version format is invalid", "version", version)
 		return "Unknown"
 	}
