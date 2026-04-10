@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"regexp"
+	"strings"
 )
 
 type VersionResponse struct {
@@ -12,6 +14,10 @@ type VersionResponse struct {
 }
 
 var version string = ""
+
+// versionRegex validates that the version string follows a safe format.
+// It allows an optional 'v' prefix, followed by digits and dots (e.g., v1.2.3, 0.1).
+var versionRegex = regexp.MustCompile(`^v?\d+(\.\d+)*(-[\w\.-]+)?$`)
 
 func VersionHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -41,7 +47,13 @@ func loadVersion() string {
 		slog.Error("Error: not able to read version file", "error", err)
 		version = "Unknown"
 	} else {
-		version = string(versionValue)
+		v := strings.TrimSpace(string(versionValue))
+		if versionRegex.MatchString(v) {
+			version = v
+		} else {
+			slog.Warn("Warning: version file contains invalid or unsafe characters", "value", v)
+			version = "Unknown"
+		}
 	}
 	return version
 }

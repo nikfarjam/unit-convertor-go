@@ -58,6 +58,51 @@ func TestVersionHandler(t *testing.T) {
 	deleteTempVersionFile(versionFilePath)
 }
 
+func TestLoadVersionInvalid(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  string
+		expected string
+	}{
+		{
+			name:     "XSS script tag",
+			content:  "<script>alert(1)</script>",
+			expected: "Unknown",
+		},
+		{
+			name:     "Invalid characters",
+			content:  "1.2.3; drop table users",
+			expected: "Unknown",
+		},
+		{
+			name:     "Valid version with spaces",
+			content:  "  v1.2.3  \n",
+			expected: "v1.2.3",
+		},
+		{
+			name:     "Valid semantic version with hyphen",
+			content:  "1.0.0-beta.1",
+			expected: "1.0.0-beta.1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			version = ""
+			versionFilePath := createTempVersionFile(tt.content)
+			t.Setenv("UC_VERSION_PATH", versionFilePath)
+
+			result := loadVersion()
+
+			if result != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, result)
+			}
+
+			deleteTempVersionFile(versionFilePath)
+		})
+	}
+}
+
 func TestLoadVersionNotFound(t *testing.T) {
 	version = ""
 	t.Setenv("UC_VERSION_PATH", "does_not_exist_version_file")
