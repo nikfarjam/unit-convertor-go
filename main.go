@@ -14,24 +14,26 @@ import (
 
 func main() {
 	initLogger()
+	server := setupServer(":9090")
 
+	slog.Info("Server is starting", "address", "http://localhost"+server.Addr)
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		slog.Error("Error starting server", "error", err)
+		os.Exit(1)
+	}
+}
+
+func setupServer(addr string) *http.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /converter", api.ConverterHandler)
 	mux.HandleFunc("GET /version", api.VersionHandler)
 
-	addr := ":9090"
-	server := &http.Server{
+	return &http.Server{
 		Addr:         addr,
 		Handler:      mux,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
-	}
-
-	slog.Info("Server is starting", "address", "http://localhost"+addr)
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		slog.Error("Error starting server", "error", err)
-		os.Exit(1)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestGetLogLevel(t *testing.T) {
@@ -45,6 +46,17 @@ func TestInitLogger(t *testing.T) {
 	t.Setenv("LOG_OUTPUT", "FILE")
 	t.Setenv("LOG_FILE_PATH", t.TempDir()+"/test.log")
 	initLogger()
+}
+
+func TestSetupServer(t *testing.T) {
+	addr := ":9091"
+	server := setupServer(addr)
+	if server.Addr != addr {
+		t.Errorf("expected addr %s, got %s", addr, server.Addr)
+	}
+	if server.ReadTimeout != 5*time.Second {
+		t.Errorf("expected ReadTimeout 5s, got %v", server.ReadTimeout)
+	}
 }
 
 func TestGetLogWriter(t *testing.T) {
