@@ -42,6 +42,27 @@ func TestConverterHandler_Success(t *testing.T) {
 	if resp.Unit != "FAHRENHEIT" {
 		t.Errorf("expected unit %s, got %s", "FAHRENHEIT", resp.Unit)
 	}
+
+	// Verify security headers
+	if w.Header().Get("Content-Type") != "application/json" {
+		t.Errorf("expected Content-Type application/json, got %q", w.Header().Get("Content-Type"))
+	}
+	if w.Header().Get("X-Content-Type-Options") != "nosniff" {
+		t.Errorf("expected X-Content-Type-Options nosniff, got %q", w.Header().Get("X-Content-Type-Options"))
+	}
+}
+
+func TestConverterHandler_MaxBytes(t *testing.T) {
+	// Create a body larger than 1MB
+	largeBody := make([]byte, 1024*1024+1)
+	req := httptest.NewRequest(http.MethodPost, api_url, bytes.NewReader(largeBody))
+	w := httptest.NewRecorder()
+
+	ConverterHandler(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
 }
 
 func TestConverterHandler_InvalidJSON(t *testing.T) {
