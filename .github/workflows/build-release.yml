@@ -1,44 +1,43 @@
 name: Build Unit Converter API
 env:
-  GO_VERSION: '1.26.1'
+  GO_VERSION: "1.26.2"
 
 on:
   pull_request:
   push:
 
 jobs:
-
   code-quality:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version: "${{ env.GO_VERSION }}"
-        cache: 'true'  
-    - name: Lint
-      run: make lint
-    - name: Test
-      run: |
-        make coverage-ci
-        make coverage-codecov
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+      - uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "${{ env.GO_VERSION }}"
+          cache: "true"
+      - name: Lint
+        run: make lint
+      - name: Test
+        run: |
+          make coverage-ci
+          make coverage-codecov
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version: "${{ env.GO_VERSION }}"
-        cache: 'true'
-    - name: Build
-      run: make build
+      - uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "${{ env.GO_VERSION }}"
+          cache: "true"
+      - name: Build
+        run: make build
 
   set-ci-variables:
     runs-on: ubuntu-latest
@@ -46,21 +45,21 @@ jobs:
       API_VERSION: ${{ steps.set-env.outputs.API_VERSION }}
       IMAGE_TAG: ${{ steps.set-env.outputs.IMAGE_TAG }}
     steps:
-    - uses: actions/checkout@v6
-    - name: Set Pipeline environment variables
-      id: set-env
-      run: |
-        image_name="${{ vars.DOCKER_HUB_REPOSITORY }}/unit-converter-api-lightweight"
-        api_version="$(cat version)"
-        if [[ "${GITHUB_REF}" == refs/heads/develop ]]; then
-          image_tag="${image_name}:${api_version}-beta"
-        elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
-          image_tag="${image_name}:${api_version}"
-        else
-          image_tag="${image_name}:test"
-        fi
-        echo "API_VERSION=${api_version}" >> $GITHUB_OUTPUT
-        echo "IMAGE_TAG=${image_tag}" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@v6
+      - name: Set Pipeline environment variables
+        id: set-env
+        run: |
+          image_name="${{ vars.DOCKER_HUB_REPOSITORY }}/unit-converter-api-lightweight"
+          api_version="$(cat version)"
+          if [[ "${GITHUB_REF}" == refs/heads/develop ]]; then
+            image_tag="${image_name}:${api_version}-beta"
+          elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
+            image_tag="${image_name}:${api_version}"
+          else
+            image_tag="${image_name}:test"
+          fi
+          echo "API_VERSION=${api_version}" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAG=${image_tag}" >> $GITHUB_OUTPUT
 
   docker-build-image:
     strategy:
@@ -76,17 +75,17 @@ jobs:
       contents: read
     if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
     steps:
-    - uses: actions/checkout@v6
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ vars.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-    - name: Build and push Docker image
-      id: build
-      run: |
-        make build-image IMAGE_TAG=${{ needs.set-ci-variables.outputs.IMAGE_TAG }}-${{ matrix.archSuffix }}
-        docker push ${{ needs.set-ci-variables.outputs.IMAGE_TAG }}-${{ matrix.archSuffix }}
+      - uses: actions/checkout@v6
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push Docker image
+        id: build
+        run: |
+          make build-image IMAGE_TAG=${{ needs.set-ci-variables.outputs.IMAGE_TAG }}-${{ matrix.archSuffix }}
+          docker push ${{ needs.set-ci-variables.outputs.IMAGE_TAG }}-${{ matrix.archSuffix }}
 
   create-manifest:
     runs-on: ubuntu-latest
@@ -95,22 +94,22 @@ jobs:
     permissions:
       contents: read
     steps:
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ vars.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-    - name: Create and push multi-arch manifest
-      run: |
-        tag="${{ needs.set-ci-variables.outputs.IMAGE_TAG }}"
-        if [[ -z "$tag" ]]; then
-          echo "ERROR: IMAGE_TAG output is empty. Ensure set-ci-variables job ran and produced IMAGE_TAG." >&2
-          exit 1
-        fi
-        docker manifest create "${tag}" \
-          "${tag}-amd64" \
-          "${tag}-arm64"
-        docker manifest push "${tag}"
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Create and push multi-arch manifest
+        run: |
+          tag="${{ needs.set-ci-variables.outputs.IMAGE_TAG }}"
+          if [[ -z "$tag" ]]; then
+            echo "ERROR: IMAGE_TAG output is empty. Ensure set-ci-variables job ran and produced IMAGE_TAG." >&2
+            exit 1
+          fi
+          docker manifest create "${tag}" \
+            "${tag}-amd64" \
+            "${tag}-arm64"
+          docker manifest push "${tag}"
 
   tag-branch:
     runs-on: ubuntu-latest
@@ -119,16 +118,16 @@ jobs:
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@v6      
-    - name: Tag branch
-      run: |
-        api_version="${{ needs.set-ci-variables.outputs.API_VERSION }}"
-        git fetch --tags
-        if git rev-parse "origin/${api_version}" >/dev/null 2>&1 || git ls-remote --tags origin | grep "refs/tags/${api_version}" >/dev/null; then
-          echo "Tag ${api_version} already exists on remote. Skipping tag creation and push."
-          exit 0
-        fi
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git tag "${api_version}"
-        git push origin "${api_version}"
+      - uses: actions/checkout@v6
+      - name: Tag branch
+        run: |
+          api_version="${{ needs.set-ci-variables.outputs.API_VERSION }}"
+          git fetch --tags
+          if git rev-parse "origin/${api_version}" >/dev/null 2>&1 || git ls-remote --tags origin | grep "refs/tags/${api_version}" >/dev/null; then
+            echo "Tag ${api_version} already exists on remote. Skipping tag creation and push."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${api_version}"
+          git push origin "${api_version}"
