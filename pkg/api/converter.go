@@ -21,7 +21,10 @@ type ConverterResponse struct {
 }
 
 func ConverterHandler(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1024)
 	defer r.Body.Close()
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	slog.Debug("Received request", "method", r.Method, "path", r.URL.Path)
 	dec := json.NewDecoder(r.Body)
 	req := &ConverterRequest{}
