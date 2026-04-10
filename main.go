@@ -16,12 +16,12 @@ func main() {
 	http.HandleFunc("/converter", api.ConverterHandler)
 	http.HandleFunc("GET /version", api.VersionHandler)
 	addr := ":9090"
+	fmt.Printf("Server is running on http://localhost%s\n", addr)
+	slog.Info("Server is running on http://localhost" + addr)
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		slog.Error("Error starting server", "error", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Server is running on http://localhost%s\n", addr)
-	slog.Warn("Server is running on http://localhost" + addr)
 }
 
 func getLogLevel() slog.Level {
