@@ -36,6 +36,17 @@ func TestGetLogLevel(t *testing.T) {
 	}
 }
 
+func TestInitLogger(t *testing.T) {
+	// Just verify it doesn't panic
+	t.Setenv("LOG_LEVEL", "DEBUG")
+	t.Setenv("LOG_OUTPUT", "STANDARD")
+	initLogger()
+
+	t.Setenv("LOG_OUTPUT", "FILE")
+	t.Setenv("LOG_FILE_PATH", t.TempDir()+"/test.log")
+	initLogger()
+}
+
 func TestGetLogWriter(t *testing.T) {
 	tempDir := t.TempDir()
 

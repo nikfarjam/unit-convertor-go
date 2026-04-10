@@ -66,6 +66,19 @@ func TestVersionHandler(t *testing.T) {
 	deleteTempVersionFile(versionFilePath)
 }
 
+
+func TestVersionHandler_EncodeError(t *testing.T) {
+	version = ""
+	versionFilePath := createTempVersionFile(testVersion)
+	t.Setenv("UC_VERSION_PATH", versionFilePath)
+
+	req := httptest.NewRequest(http.MethodGet, "/version", nil)
+	w := &errorResponseWriter{*httptest.NewRecorder()}
+
+	VersionHandler(w, req)
+	deleteTempVersionFile(versionFilePath)
+}
+
 func TestLoadVersionInvalidFormat(t *testing.T) {
 	tests := []struct {
 		name    string

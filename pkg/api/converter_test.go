@@ -155,3 +155,28 @@ func TestConverterHandler_FahrenheitToCelsius(t *testing.T) {
 		t.Errorf("expected unit %s, got %s", "CELSIUS", resp.Unit)
 	}
 }
+
+type errorResponseWriter struct {
+	httptest.ResponseRecorder
+}
+
+func (e *errorResponseWriter) Write(b []byte) (int, error) {
+	return 0, bytes.ErrTooLarge // Simulating an error
+}
+
+func TestConverterHandler_EncodeError(t *testing.T) {
+	reqBody := converter.ConverterRequest{
+		Value: 0,
+		From:  "celsius",
+		To:    "fahrenheit",
+	}
+	body, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, api_url, bytes.NewReader(body))
+	w := &errorResponseWriter{*httptest.NewRecorder()}
+
+	// This is a bit tricky because json.Encoder might buffer.
+	// But let's see if it hits the error path.
+	ConverterHandler(w, req)
+	// We don't check code because it might have already sent 200 header
+}
