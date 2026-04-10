@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type VersionResponse struct {
@@ -40,5 +41,5 @@ func loadVersion() string {
 		slog.Error("Error: not able to read version file", "error", err)
 		return "Unknown"
 	}
-	return string(versionValue)
+	return strings.TrimSpace(string(versionValue))
 }
