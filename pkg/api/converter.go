@@ -12,6 +12,14 @@ import (
 func ConverterHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	slog.Debug("Received request", "method", r.Method, "path", r.URL.Path)
+
+	// Set security headers
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+
+	// Limit request body size to 1MB to prevent DoS
+	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
+
 	dec := json.NewDecoder(r.Body)
 	req := &converter.ConverterRequest{}
 
@@ -41,8 +49,7 @@ func ConverterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	enc := json.NewEncoder(w)
-	if err := enc.Encode(resp); err != nil {
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		slog.Error("Error: not able to encode response", "error", err)
 		http.Error(w, "not able to process request", http.StatusInternalServerError)
 		return
