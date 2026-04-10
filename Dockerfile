@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Build the application from source
-FROM golang:1.26.1-alpine3.23 AS build-stage
+FROM golang:1.26.2-alpine3.23 AS build-stage
 
 WORKDIR /app
 
@@ -33,5 +33,10 @@ ENV LOG_LEVEL=INFO \
     LOG_OUTPUT=STANDARD \
     LOG_FILE_PATH=/var/log/unit-converter/app.log
 EXPOSE 9090
+
+LABEL "com.datadoghq.ad.check_names"='["unit_converter"]'
+LABEL "com.datadoghq.ad.init_configs"='[{}]'
+LABEL "com.datadoghq.ad.instances"='[{"unit_converter": "http://%%host%%:%%port%%/version"}]'
+LABEL "com.datadoghq.ad.logs"='[{"source": "unit_converter", "service": "api-server", "type": "http"}]'
 
 ENTRYPOINT ["/app/api-server"]
