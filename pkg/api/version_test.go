@@ -9,6 +9,8 @@ import (
 )
 
 var testVersion = "1.2.3"
+var test_api_url = "/version"
+var default_version = "Unknown"
 
 func createTempVersionFile(content string) string {
 	cacheVersion = ""
@@ -38,7 +40,7 @@ func TestVersionHandler(t *testing.T) {
 
 	t.Setenv("UC_VERSION_PATH", versionFilePath)
 
-	req := httptest.NewRequest(http.MethodGet, "/version", nil)
+	req := httptest.NewRequest(http.MethodGet, test_api_url, nil)
 	w := httptest.NewRecorder()
 
 	VersionHandler(w, req)
@@ -80,7 +82,7 @@ func TestVersionHandlerCache(t *testing.T) {
 	t.Setenv("UC_VERSION_PATH", "does_not_exist_version_file")
 
 	// Second call: should return cached value, not try to read from new path
-	req = httptest.NewRequest(http.MethodGet, "/version", nil)
+	req = httptest.NewRequest(http.MethodGet, test_api_url, nil)
 	w = httptest.NewRecorder()
 
 	VersionHandler(w, req)
@@ -101,10 +103,10 @@ func TestLoadVersionNotFound(t *testing.T) {
 
 	result := loadVersion()
 
-	var expected = "Unknown"
-	if string(result) != expected {
+	var expected = default_version
+	if result != expected {
 		t.Errorf("%s: expected %q, got %q",
-			"should return Unknown when version file not found in current dir", expected, string(result))
+			"should return Unknown when version file not found in current dir", expected, result)
 	}
 }
 
@@ -115,9 +117,9 @@ func TestLoadVersion(t *testing.T) {
 
 	result := loadVersion()
 
-	if string(result) != testVersion {
+	if result != testVersion {
 		t.Errorf("%s: expected %q, got %q",
-			"should read version from UC_VERSION_PATH", testVersion, string(result))
+			"should read version from UC_VERSION_PATH", testVersion, result)
 	}
 
 	deleteTempVersionFile(versionFilePath)
@@ -142,7 +144,7 @@ func TestLoadVersionDoNotCache(t *testing.T) {
 		t.Errorf("first call should read version from file: got %q, want %q", firstCall, testVersion)
 	}
 
-	if secondCall != "Unknown" {
+	if secondCall != default_version {
 		t.Errorf("second call should return Unknown due to invalid path, got %q", secondCall)
 	}
 
@@ -157,10 +159,38 @@ func TestLoadVersionWithWhitespace(t *testing.T) {
 
 	result := loadVersion()
 
-	if string(result) != testVersion {
+	if result != testVersion {
 		t.Errorf("%s: expected %q, got %q",
-			"should read trimmed version from UC_VERSION_PATH", testVersion, string(result))
+			"should read trimmed version from UC_VERSION_PATH", testVersion, result)
 	}
 
+	deleteTempVersionFile(versionFilePath)
+}
+
+func TestLoadVersionLoadDefault(t *testing.T) {
+	cacheVersion = ""
+	t.Setenv("UC_VERSION_PATH", "")
+
+	result := loadVersion()
+
+	if result != default_version {
+		t.Errorf("%s: expected %q, got %q",
+			"should read trimmed version from UC_VERSION_PATH", default_version, result)
+	}
+
+}
+
+func TestLoadVersionInvalidFormat(t *testing.T) {
+	cacheVersion = ""
+	invalidVersion := "harmful.sh"
+	versionFilePath := createTempVersionFile(invalidVersion)
+	t.Setenv("UC_VERSION_PATH", versionFilePath)
+
+	result := loadVersion()
+
+	if result != default_version {
+		t.Errorf("%s: expected %q, got %q",
+			"should read trimmed version from UC_VERSION_PATH", default_version, result)
+	}
 	deleteTempVersionFile(versionFilePath)
 }

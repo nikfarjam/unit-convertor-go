@@ -5,12 +5,15 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 )
 
 type VersionResponse struct {
 	Version string `json:"version"`
 }
+
+var versionRegexp = regexp.MustCompile(`^[0-9]+(\.[0-9]+)*([+-][A-Za-z0-9._-]+)?$`)
 
 var cacheVersion string = ""
 
@@ -41,5 +44,10 @@ func loadVersion() string {
 		slog.Error("Error: not able to read version file", "error", err)
 		return "Unknown"
 	}
-	return strings.TrimSpace(string(versionValue))
+	version := strings.TrimSpace(string(versionValue))
+	if !versionRegexp.MatchString(version) {
+		slog.Error("Error: version format is invalid", "version", version)
+		return "Unknown"
+	}
+	return version
 }
