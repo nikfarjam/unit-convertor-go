@@ -34,14 +34,29 @@ func TestInvalidInput(t *testing.T) {
 	}
 }
 
-func almostEqual(v1, v2 float64) bool {
-	fmt.Printf("Diff: %v", Abs(v2-v1))
-	return Abs(v2-v1) < 0.001
-}
+func TestSameUnitConversion(t *testing.T) {
 
-func Abs(v float64) float64 {
-	if v < 0 {
-		return -v
+	tests := []struct {
+		unit  string
+		value float64
+	}{
+		{"celsius", 25},
+		{"Celsius", 23.56},
+		{"CELSIUS", 25.67},
+		{"fahrenheit", 77},
+		{"Fahrenheit", 77.12},
+		{"FAHRENHEIT", 77.65},
 	}
-	return v
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%s_%v", tt.unit, tt.value), func(t *testing.T) {
+			result, err := ConvertUnit(tt.unit, tt.unit, tt.value)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result != tt.value {
+				t.Errorf("for %s_%v: expected %v, got %v", tt.unit, tt.value, tt.value, result)
+			}
+		})
+	}
 }
