@@ -6,41 +6,29 @@ import (
 )
 
 func TestCelsiusFahrenheit(t *testing.T) {
-	req := NewConverterRequest(97, "celsius", "FAHRENHEIT")
-
-	resp, err := ConvertUnit(*req)
+	result, err := ConvertUnit("celsius", "FAHRENHEIT", 97)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if resp.Unit != "FAHRENHEIT" {
-		t.Fatalf("Expected resp.Unit to be 'FAHRENHEIT' but it was %v", resp.Unit)
-	}
-	if resp.Value != 206.6 {
-		t.Fatalf("Expected resp.Unit to be '206.6' but it was %v", resp.Value)
+	if result != 206.6 {
+		t.Fatalf("Expected resp.Unit to be '206.6' but it was %v", result)
 	}
 }
 
 func TestFahrenheitCelsius(t *testing.T) {
-	req := NewConverterRequest(40, "FAHRENHEIT", "celsius")
-
-	resp, err := ConvertUnit(*req)
+	result, err := ConvertUnit("FAHRENHEIT", "celsius", 40)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if resp.Unit != "CELSIUS" {
-		t.Fatalf("Expected resp.Unit to be 'CELSIUS' but it was %v", resp.Unit)
-	}
-	if !almostEqual(resp.Value, 4.44) {
-		t.Fatalf("Expected resp.Unit to be '4.44' but it was %v", resp.Value)
+	if result != 4.44 {
+		t.Fatalf("Expected resp.Unit to be '4.44' but it was %v", result)
 	}
 }
 
 func TestInvalidInput(t *testing.T) {
-	req := NewConverterRequest(40, "test", "Invalid")
-
-	_, err := ConvertUnit(*req)
+	_, err := ConvertUnit("test", "Invalid", 40)
 	if err == nil {
 		t.Fatal("When units are not valid ConvertUnit must return error")
 	}

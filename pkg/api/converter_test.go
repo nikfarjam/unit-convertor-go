@@ -6,14 +6,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/nikfarjam/unit-convertor-go/pkg/converter"
 )
 
-var api_url = "/convert"
+var api_url = "/converter"
 
 func TestConverterHandler_Success(t *testing.T) {
-	reqBody := converter.ConverterRequest{
+	reqBody := ConverterRequest{
 		Value: 0,
 		From:  "celsius",
 		To:    "fahrenheit",
@@ -29,7 +27,7 @@ func TestConverterHandler_Success(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
 	}
 
-	var resp converter.ConverterResponse
+	var resp ConverterResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
@@ -60,7 +58,7 @@ func TestConverterHandler_InvalidJSON(t *testing.T) {
 }
 
 func TestConverterHandler_InvalidFromUnit(t *testing.T) {
-	reqBody := converter.ConverterRequest{
+	reqBody := ConverterRequest{
 		Value: 0,
 		From:  "invalid",
 		To:    "fahrenheit",
@@ -82,7 +80,7 @@ func TestConverterHandler_InvalidFromUnit(t *testing.T) {
 }
 
 func TestConverterHandler_InvalidToUnit(t *testing.T) {
-	reqBody := converter.ConverterRequest{
+	reqBody := ConverterRequest{
 		Value: 0,
 		From:  "celsius",
 		To:    "invalid",
@@ -104,7 +102,7 @@ func TestConverterHandler_InvalidToUnit(t *testing.T) {
 }
 
 func TestConverterHandler_FahrenheitToCelsius(t *testing.T) {
-	reqBody := converter.ConverterRequest{
+	reqBody := ConverterRequest{
 		Value: 32,
 		From:  "fahrenheit",
 		To:    "celsius",
@@ -120,7 +118,7 @@ func TestConverterHandler_FahrenheitToCelsius(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
 	}
 
-	var resp converter.ConverterResponse
+	var resp ConverterResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
