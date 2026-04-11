@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"regexp"
+	"strings"
 )
 
 type VersionResponse struct {
@@ -13,7 +15,11 @@ type VersionResponse struct {
 
 var version string = ""
 
+var versionRegex = regexp.MustCompile(`^v?\d+(\.\d+)*(-[\w\.-]+)?$`)
+
 func VersionHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	defer r.Body.Close()
 	slog.Debug("Received request", "method", r.Method, "path", r.URL.Path)
 
@@ -41,7 +47,13 @@ func loadVersion() string {
 		slog.Error("Error: not able to read version file", "error", err)
 		version = "Unknown"
 	} else {
-		version = string(versionValue)
+		v := strings.TrimSpace(string(versionValue))
+		if versionRegex.MatchString(v) {
+			version = v
+		} else {
+			slog.Error("Error: invalid version format", "version", v)
+			version = "Unknown"
+		}
 	}
 	return version
 }
