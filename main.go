@@ -12,24 +12,28 @@ import (
 	"github.com/nikfarjam/unit-convertor-go/pkg/api"
 )
 
-func main() {
-	initLogger()
-
+func setupServer() *http.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /converter", api.ConverterHandler)
 	mux.HandleFunc("GET /version", api.VersionHandler)
 
 	addr := ":9090"
-	server := &http.Server{
+	return &http.Server{
 		Addr:         addr,
 		Handler:      mux,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
+}
 
-	fmt.Printf("Server is running on http://localhost%s\n", addr)
-	slog.Warn("Server is running on http://localhost" + addr)
+func main() {
+	initLogger()
+
+	server := setupServer()
+
+	fmt.Printf("Server is running on http://localhost%s\n", server.Addr)
+	slog.Warn("Server is running on http://localhost" + server.Addr)
 
 	if err := server.ListenAndServe(); err != nil {
 		slog.Error("Error starting server", "error", err)

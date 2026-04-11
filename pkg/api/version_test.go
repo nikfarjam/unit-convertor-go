@@ -58,6 +58,32 @@ func TestVersionHandler(t *testing.T) {
 	deleteTempVersionFile(versionFilePath)
 }
 
+func TestVersionHandler_InvalidFormat(t *testing.T) {
+	version = ""
+	versionFilePath := createTempVersionFile("invalid version")
+
+	t.Setenv("UC_VERSION_PATH", versionFilePath)
+
+	req := httptest.NewRequest(http.MethodGet, "/version", nil)
+	w := httptest.NewRecorder()
+
+	VersionHandler(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+
+	var resp VersionResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	if resp.Version != "Unknown" {
+		t.Fatalf("expected version %q, got %q", "Unknown", resp.Version)
+	}
+
+	deleteTempVersionFile(versionFilePath)
+}
+
 func TestLoadVersionNotFound(t *testing.T) {
 	version = ""
 	t.Setenv("UC_VERSION_PATH", "does_not_exist_version_file")

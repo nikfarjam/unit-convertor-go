@@ -2,9 +2,11 @@ package main
 
 import (
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestGetLogLevel(t *testing.T) {
@@ -34,6 +36,45 @@ func TestGetLogLevel(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSetupServer(t *testing.T) {
+	server := setupServer()
+
+	if server.Addr != ":9090" {
+		t.Errorf("expected addr :9090, got %s", server.Addr)
+	}
+
+	if server.ReadTimeout != 5*time.Second {
+		t.Errorf("expected ReadTimeout 5s, got %v", server.ReadTimeout)
+	}
+
+	if server.WriteTimeout != 10*time.Second {
+		t.Errorf("expected WriteTimeout 10s, got %v", server.WriteTimeout)
+	}
+
+	if server.IdleTimeout != 120*time.Second {
+		t.Errorf("expected IdleTimeout 120s, got %v", server.IdleTimeout)
+	}
+
+	mux, ok := server.Handler.(*http.ServeMux)
+	if !ok {
+		t.Fatal("expected handler to be *http.ServeMux")
+	}
+
+	// We can't easily check registered routes in http.ServeMux without reflection or internal access
+	// but we've verified the structure of setupServer.
+	if mux == nil {
+		t.Fatal("mux should not be nil")
+	}
+}
+
+func TestInitLogger(t *testing.T) {
+	// Call initLogger to cover it
+	initLogger()
+
+	// Verify that the default logger is set (JSON handler)
+	// slog doesn't expose its handler easily, but we can verify it doesn't panic
 }
 
 func TestGetLogWriter(t *testing.T) {
@@ -78,6 +119,19 @@ func TestGetLogWriter(t *testing.T) {
 			logFilePath:  filepath.Join(tempDir, "logs/"),
 			expectStdout: false,
 			expectedPath: filepath.Join(tempDir, "logs/app.log"),
+		},
+		{
+			name:         "file without .log extension",
+			logOutput:    "FILE",
+			logFilePath:  filepath.Join(tempDir, "myapp"),
+			expectStdout: false,
+			expectedPath: filepath.Join(tempDir, "myapp/app.log"),
+		},
+		{
+			name:         "invalid path defaults to stdout",
+			logOutput:    "FILE",
+			logFilePath:  "/invalid/path/to/log.log",
+			expectStdout: true,
 		},
 	}
 
