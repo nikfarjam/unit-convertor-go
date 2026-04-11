@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,26 +16,38 @@ import (
 func main() {
 	initLogger()
 
+	addr := getServerPort()
+	server := setupServer(":" + addr)
+	fmt.Printf("Server is running on http://localhost:%s\n", addr)
+	slog.Warn("Server is running on http://localhost:" + addr)
+
+	if err := server.ListenAndServe(); err != nil {
+		slog.Error("Error starting server", "error", err)
+		os.Exit(1)
+	}
+}
+
+func getServerPort() string {
+	addr := os.Getenv("UC_PORT")
+
+	port, err := strconv.Atoi(addr)
+	if err != nil || port < 1 || port > 65535 {
+		return "9090"
+	}
+	return addr
+}
+
+func setupServer(addr string) *http.Server {
 	mux := http.NewServeMux()
-	// Restrict to POST method for converter
 	mux.HandleFunc("POST /converter", api.ConverterHandler)
 	mux.HandleFunc("GET /version", api.VersionHandler)
 
-	addr := ":9090"
-	server := &http.Server{
+	return &http.Server{
 		Addr:         addr,
 		Handler:      mux,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
-	}
-
-	fmt.Printf("Server is running on http://localhost%s\n", addr)
-	slog.Warn("Server is running on http://localhost" + addr)
-
-	if err := server.ListenAndServe(); err != nil {
-		slog.Error("Error starting server", "error", err)
-		os.Exit(1)
 	}
 }
 
