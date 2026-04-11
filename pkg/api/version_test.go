@@ -57,6 +57,13 @@ func TestVersionHandler(t *testing.T) {
 		t.Fatalf("expected version %q, got %q", testVersion, resp.Version)
 	}
 
+	if w.Header().Get("Content-Type") != "application/json" {
+		t.Errorf("expected Content-Type application/json, got %q", w.Header().Get("Content-Type"))
+	}
+	if w.Header().Get("X-Content-Type-Options") != "nosniff" {
+		t.Errorf("expected X-Content-Type-Options nosniff, got %q", w.Header().Get("X-Content-Type-Options"))
+	}
+
 	deleteTempVersionFile(versionFilePath)
 }
 
@@ -220,6 +227,11 @@ func TestLoadVersionInvalid(t *testing.T) {
 			name:     "Valid semantic version with hyphen",
 			content:  "1.0.0-beta.1",
 			expected: "1.0.0-beta.1",
+		},
+		{
+			name:     "Path traversal",
+			content:  "cat /etc/passwd",
+			expected: "Unknown",
 		},
 	}
 

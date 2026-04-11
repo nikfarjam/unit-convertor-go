@@ -40,6 +40,14 @@ func TestConverterHandler_Success(t *testing.T) {
 	if resp.Unit != "FAHRENHEIT" {
 		t.Errorf("expected unit %s, got %s", "FAHRENHEIT", resp.Unit)
 	}
+
+	// Verify security headers
+	if w.Header().Get("Content-Type") != "application/json" {
+		t.Errorf("expected Content-Type application/json, got %q", w.Header().Get("Content-Type"))
+	}
+	if w.Header().Get("X-Content-Type-Options") != "nosniff" {
+		t.Errorf("expected X-Content-Type-Options nosniff, got %q", w.Header().Get("X-Content-Type-Options"))
+	}
 }
 
 func TestConverterHandler_InvalidJSON(t *testing.T) {
