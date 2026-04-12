@@ -58,6 +58,14 @@ func TestVersionHandler(t *testing.T) {
 	deleteTempVersionFile(versionFilePath)
 }
 
+func TestVersionHandler_EncodeError(t *testing.T) {
+	version = "v1.2.3" // Set cached version
+	req := httptest.NewRequest(http.MethodGet, "/version", nil)
+	w := &errorResponseWriter{} // Reusing from converter_test.go (same package)
+
+	VersionHandler(w, req)
+}
+
 func TestLoadVersion_Validation(t *testing.T) {
 	tests := []struct {
 		name     string
