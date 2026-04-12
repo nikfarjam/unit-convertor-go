@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/nikfarjam/unit-convertor-go/pkg/converter"
@@ -54,8 +55,36 @@ func TestConverterHandler_InvalidJSON(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
 	}
 
-	if w.Body.String() != "bad request\n" {
-		t.Errorf("expected body 'bad request', got %q", w.Body.String())
+	expected := `{"error":"bad request"}` + "\n"
+	if w.Body.String() != expected {
+		t.Errorf("expected body %q, got %q", expected, w.Body.String())
+	}
+}
+
+func TestConverterHandler_BodySizeLimit(t *testing.T) {
+	// Create a valid JSON body larger than 1MB
+	// {"value": 0, "from": "celsius", "to": "fahrenheit", "padding": "..."}
+	padding := strings.Repeat("a", 1048576)
+	reqBody := map[string]interface{}{
+		"value":   0,
+		"from":    "celsius",
+		"to":      "fahrenheit",
+		"padding": padding,
+	}
+	body, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, api_url, bytes.NewReader(body))
+	w := httptest.NewRecorder()
+
+	ConverterHandler(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
+
+	expected := `{"error":"bad request"}` + "\n"
+	if w.Body.String() != expected {
+		t.Errorf("expected body %q, got %q", expected, w.Body.String())
 	}
 }
 
@@ -76,8 +105,9 @@ func TestConverterHandler_InvalidFromUnit(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
 	}
 
-	if w.Body.String() != "invalid from\n" {
-		t.Errorf("expected body 'invalid from', got %q", w.Body.String())
+	expected := `{"error":"invalid from"}` + "\n"
+	if w.Body.String() != expected {
+		t.Errorf("expected body %q, got %q", expected, w.Body.String())
 	}
 }
 
@@ -98,8 +128,9 @@ func TestConverterHandler_InvalidToUnit(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
 	}
 
-	if w.Body.String() != "invalid to\n" {
-		t.Errorf("expected body 'invalid to', got %q", w.Body.String())
+	expected := `{"error":"invalid to"}` + "\n"
+	if w.Body.String() != expected {
+		t.Errorf("expected body %q, got %q", expected, w.Body.String())
 	}
 }
 

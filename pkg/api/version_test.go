@@ -58,6 +58,36 @@ func TestVersionHandler(t *testing.T) {
 	deleteTempVersionFile(versionFilePath)
 }
 
+func TestLoadVersion_Validation(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  string
+		expected string
+	}{
+		{"valid semver", "v1.2.3", "v1.2.3"},
+		{"valid semver with prefix", "1.2.3", "1.2.3"},
+		{"valid semver with suffix", "1.2.3-beta.1", "1.2.3-beta.1"},
+		{"valid semver with whitespace", "  v1.2.3  \n", "v1.2.3"},
+		{"invalid characters", "v1.2.3; drop table users;", "Unknown"},
+		{"empty string", "", "Unknown"},
+		{"too long", "v1.2.3" + string(make([]byte, 100)), "Unknown"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			version = ""
+			versionFilePath := createTempVersionFile(tt.content)
+			t.Setenv("UC_VERSION_PATH", versionFilePath)
+
+			result := loadVersion()
+			if result != tt.expected {
+				t.Errorf("for content %q: expected %q, got %q", tt.content, tt.expected, result)
+			}
+			deleteTempVersionFile(versionFilePath)
+		})
+	}
+}
+
 func TestLoadVersionNotFound(t *testing.T) {
 	version = ""
 	t.Setenv("UC_VERSION_PATH", "does_not_exist_version_file")

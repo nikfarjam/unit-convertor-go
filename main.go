@@ -7,21 +7,36 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/nikfarjam/unit-convertor-go/pkg/api"
 )
 
 func main() {
 	initLogger()
-	http.HandleFunc("/converter", api.ConverterHandler)
-	http.HandleFunc("GET /version", api.VersionHandler)
+
+	mux := http.NewServeMux()
+	// Restricted to POST to prevent information disclosure or unintended execution via GET
+	mux.HandleFunc("POST /converter", api.ConverterHandler)
+	mux.HandleFunc("GET /version", api.VersionHandler)
+
 	addr := ":9090"
-	if err := http.ListenAndServe(addr, nil); err != nil {
+	// Configured with explicit timeouts to mitigate Slowloris and other DoS attacks
+	server := &http.Server{
+		Addr:         addr,
+		Handler:      mux,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+
+	fmt.Printf("Server is running on http://localhost%s\n", addr)
+	slog.Warn("Server is running on http://localhost" + addr)
+
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		slog.Error("Error starting server", "error", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Server is running on http://localhost%s\n", addr)
-	slog.Warn("Server is running on http://localhost" + addr)
 }
 
 func getLogLevel() slog.Level {
