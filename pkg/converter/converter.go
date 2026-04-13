@@ -6,42 +6,18 @@ import (
 	"strings"
 )
 
-type ConverterRequest struct {
-	Value float64 `json:"value"`
-	From  string  `json:"from"`
-	To    string  `json:"to"`
-}
-
-func NewConverterRequest(value float64, from string, to string) *ConverterRequest {
-	return &ConverterRequest{
-		Value: value,
-		From:  from,
-		To:    to,
-	}
-}
-
-type ConverterResponse struct {
-	Value float64 `json:"value"`
-	Unit  string  `json:"Unit"`
-}
-
-func ConvertUnit(req ConverterRequest) (ConverterResponse, error) {
-	from := strings.ToUpper(req.From)
-	to := strings.ToUpper(req.To)
-	switch fmt.Sprintf("%v_%v", from, to) {
+func ConvertUnit(from string, to string, value float64) (float64, error) {
+	switch fmt.Sprintf("%v_%v", strings.ToUpper(from), strings.ToUpper(to)) {
 	case "CELSIUS_FAHRENHEIT":
-		return ConverterResponse{
-			Value: roundFloat((req.Value*9/5)+32, 2),
-			Unit:  to,
-		}, nil
+		return roundFloat((value*9/5)+32, 2), nil
 	case "FAHRENHEIT_CELSIUS":
-		return ConverterResponse{
-			Value: roundFloat((req.Value-32)*5/9, 2),
-			Unit:  to,
-		}, nil
+		return roundFloat((value-32)*5/9, 2), nil
+	case "CELSIUS_CELSIUS":
+		return roundFloat(value, 2), nil
+	case "FAHRENHEIT_FAHRENHEIT":
+		return roundFloat(value, 2), nil
 	default:
-		return ConverterResponse{},
-			fmt.Errorf("error: form %s and to %s units are not valid", from, to)
+		return 0, fmt.Errorf("error: from %s and to %s units are not valid", from, to)
 	}
 }
 

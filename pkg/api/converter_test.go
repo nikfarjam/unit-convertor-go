@@ -6,14 +6,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/nikfarjam/unit-convertor-go/pkg/converter"
 )
 
-var api_url = "/convert"
+var api_url = "/converter"
 
 func TestConverterHandler_Success(t *testing.T) {
-	reqBody := converter.ConverterRequest{
+	reqBody := ConverterRequest{
 		Value: 0,
 		From:  "celsius",
 		To:    "fahrenheit",
@@ -29,7 +27,7 @@ func TestConverterHandler_Success(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
 	}
 
-	var resp converter.ConverterResponse
+	var resp ConverterResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
@@ -41,6 +39,14 @@ func TestConverterHandler_Success(t *testing.T) {
 
 	if resp.Unit != "FAHRENHEIT" {
 		t.Errorf("expected unit %s, got %s", "FAHRENHEIT", resp.Unit)
+	}
+
+	// Verify security headers
+	if w.Header().Get("Content-Type") != "application/json" {
+		t.Errorf("expected Content-Type application/json, got %q", w.Header().Get("Content-Type"))
+	}
+	if w.Header().Get("X-Content-Type-Options") != "nosniff" {
+		t.Errorf("expected X-Content-Type-Options nosniff, got %q", w.Header().Get("X-Content-Type-Options"))
 	}
 }
 
@@ -60,7 +66,7 @@ func TestConverterHandler_InvalidJSON(t *testing.T) {
 }
 
 func TestConverterHandler_InvalidFromUnit(t *testing.T) {
-	reqBody := converter.ConverterRequest{
+	reqBody := ConverterRequest{
 		Value: 0,
 		From:  "invalid",
 		To:    "fahrenheit",
@@ -82,7 +88,7 @@ func TestConverterHandler_InvalidFromUnit(t *testing.T) {
 }
 
 func TestConverterHandler_InvalidToUnit(t *testing.T) {
-	reqBody := converter.ConverterRequest{
+	reqBody := ConverterRequest{
 		Value: 0,
 		From:  "celsius",
 		To:    "invalid",
@@ -104,7 +110,7 @@ func TestConverterHandler_InvalidToUnit(t *testing.T) {
 }
 
 func TestConverterHandler_FahrenheitToCelsius(t *testing.T) {
-	reqBody := converter.ConverterRequest{
+	reqBody := ConverterRequest{
 		Value: 32,
 		From:  "fahrenheit",
 		To:    "celsius",
@@ -120,7 +126,7 @@ func TestConverterHandler_FahrenheitToCelsius(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
 	}
 
-	var resp converter.ConverterResponse
+	var resp ConverterResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
@@ -132,5 +138,34 @@ func TestConverterHandler_FahrenheitToCelsius(t *testing.T) {
 
 	if resp.Unit != "CELSIUS" {
 		t.Errorf("expected unit %s, got %s", "CELSIUS", resp.Unit)
+	}
+}
+
+func TestConverterHandler_BodyTooLarge(t *testing.T) {
+	// Create a large valid JSON body larger than 1MB
+	// {"value": 0, "from": "celsius", "to": "fahrenheit", "extra": "..."}
+	prefix := `{"value": 0, "from": "celsius", "to": "fahrenheit", "extra": "`
+	suffix := `"}`
+	size := 1024 + 100
+	fillSize := size - len(prefix) - len(suffix)
+
+	largeBody := make([]byte, 0, size)
+	largeBody = append(largeBody, prefix...)
+	for i := 0; i < fillSize; i++ {
+		largeBody = append(largeBody, 'a')
+	}
+	largeBody = append(largeBody, suffix...)
+
+	req := httptest.NewRequest(http.MethodPost, api_url, bytes.NewReader(largeBody))
+	w := httptest.NewRecorder()
+
+	ConverterHandler(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
+
+	if w.Body.String() != "bad request\n" {
+		t.Errorf("expected body 'bad request', got %q", w.Body.String())
 	}
 }

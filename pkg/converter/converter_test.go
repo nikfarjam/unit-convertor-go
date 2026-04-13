@@ -6,54 +6,57 @@ import (
 )
 
 func TestCelsiusFahrenheit(t *testing.T) {
-	req := NewConverterRequest(97, "celsius", "FAHRENHEIT")
-
-	resp, err := ConvertUnit(*req)
+	result, err := ConvertUnit("celsius", "FAHRENHEIT", 97)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if resp.Unit != "FAHRENHEIT" {
-		t.Fatalf("Expected resp.Unit to be 'FAHRENHEIT' but it was %v", resp.Unit)
-	}
-	if resp.Value != 206.6 {
-		t.Fatalf("Expected resp.Unit to be '206.6' but it was %v", resp.Value)
+	if result != 206.6 {
+		t.Fatalf("Expected resp.Unit to be '206.6' but it was %v", result)
 	}
 }
 
 func TestFahrenheitCelsius(t *testing.T) {
-	req := NewConverterRequest(40, "FAHRENHEIT", "celsius")
-
-	resp, err := ConvertUnit(*req)
+	result, err := ConvertUnit("FAHRENHEIT", "celsius", 40)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if resp.Unit != "CELSIUS" {
-		t.Fatalf("Expected resp.Unit to be 'CELSIUS' but it was %v", resp.Unit)
-	}
-	if !almostEqual(resp.Value, 4.44) {
-		t.Fatalf("Expected resp.Unit to be '4.44' but it was %v", resp.Value)
+	if result != 4.44 {
+		t.Fatalf("Expected resp.Unit to be '4.44' but it was %v", result)
 	}
 }
 
 func TestInvalidInput(t *testing.T) {
-	req := NewConverterRequest(40, "test", "Invalid")
-
-	_, err := ConvertUnit(*req)
+	_, err := ConvertUnit("test", "Invalid", 40)
 	if err == nil {
 		t.Fatal("When units are not valid ConvertUnit must return error")
 	}
 }
 
-func almostEqual(v1, v2 float64) bool {
-	fmt.Printf("Diff: %v", Abs(v2-v1))
-	return Abs(v2-v1) < 0.001
-}
+func TestSameUnitConversion(t *testing.T) {
 
-func Abs(v float64) float64 {
-	if v < 0 {
-		return -v
+	tests := []struct {
+		unit  string
+		value float64
+	}{
+		{"celsius", 25},
+		{"Celsius", 23.56},
+		{"CELSIUS", 25.67},
+		{"fahrenheit", 77},
+		{"Fahrenheit", 77.12},
+		{"FAHRENHEIT", 77.65},
 	}
-	return v
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%s_%v", tt.unit, tt.value), func(t *testing.T) {
+			result, err := ConvertUnit(tt.unit, tt.unit, tt.value)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result != tt.value {
+				t.Errorf("for %s_%v: expected %v, got %v", tt.unit, tt.value, tt.value, result)
+			}
+		})
+	}
 }

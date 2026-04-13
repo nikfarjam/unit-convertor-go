@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestGetLogLevel(t *testing.T) {
@@ -109,6 +110,63 @@ func TestGetLogWriter(t *testing.T) {
 						t.Errorf("expected file %s to exist", tt.expectedPath)
 					}
 				}
+			}
+		})
+	}
+}
+
+func TestSetupServer(t *testing.T) {
+	addr := ":9091"
+	server := setupServer(addr)
+	if server.Addr != addr {
+		t.Errorf("expected addr %s, got %s", addr, server.Addr)
+	}
+	if server.ReadTimeout != 5*time.Second {
+		t.Errorf("expected ReadTimeout 5s, got %v", server.ReadTimeout)
+	}
+}
+
+func TestGetServerPort(t *testing.T) {
+	tests := []struct {
+		name         string
+		envVar       string // Value to set for UC_PORT
+		expectedAddr string
+	}{
+		{
+			name:         "empty env var defaults to :9090",
+			envVar:       "",
+			expectedAddr: "9090",
+		},
+		{
+			name:         "set without leading colon",
+			envVar:       "8080",
+			expectedAddr: "8080",
+		},
+		{
+			name:         "set with leading colon",
+			envVar:       ":8081",
+			expectedAddr: "9090",
+		},
+		{
+			name:         "set with path and colon",
+			envVar:       "127.0.0.1:8082",
+			expectedAddr: "9090",
+		},
+		{
+			name:         "set with invalid format",
+			envVar:       "invalid_port",
+			expectedAddr: "9090",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Setenv("UC_PORT", tt.envVar)
+			defer os.Unsetenv("UC_PORT") // Clean up after test
+
+			actualAddr := getServerPort()
+			if actualAddr != tt.expectedAddr {
+				t.Errorf("getServerPort() = %v, want %v", actualAddr, tt.expectedAddr)
 			}
 		})
 	}

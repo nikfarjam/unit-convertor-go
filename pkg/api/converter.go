@@ -9,11 +9,25 @@ import (
 	"github.com/nikfarjam/unit-convertor-go/pkg/converter"
 )
 
+type ConverterRequest struct {
+	Value float64 `json:"value"`
+	From  string  `json:"from"`
+	To    string  `json:"to"`
+}
+
+type ConverterResponse struct {
+	Value float64 `json:"value"`
+	Unit  string  `json:"unit"`
+}
+
 func ConverterHandler(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1024)
 	defer r.Body.Close()
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	slog.Debug("Received request", "method", r.Method, "path", r.URL.Path)
 	dec := json.NewDecoder(r.Body)
-	req := &converter.ConverterRequest{}
+	req := &ConverterRequest{}
 
 	if err := dec.Decode(req); err != nil {
 		slog.Error("Error: bad request", "error", err)
@@ -34,11 +48,16 @@ func ConverterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := converter.ConvertUnit(*req)
+	result, err := converter.ConvertUnit(req.From, req.To, req.Value)
 	if err != nil {
 		slog.Error("Error: not able to process request", "error", err)
 		http.Error(w, "not able to process request", http.StatusBadRequest)
 		return
+	}
+
+	resp := ConverterResponse{
+		Value: result,
+		Unit:  strings.ToUpper(req.To),
 	}
 
 	enc := json.NewEncoder(w)
