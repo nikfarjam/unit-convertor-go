@@ -1,0 +1,4 @@
+## 2024-04-13 - Thread-Safe Version Cache and Secure JSON Error Handling
+**Vulnerability:** A data race was identified in the `/version` endpoint where the global `cacheVersion` variable was accessed and initialized without synchronization, and the API lacked consistent security headers and JSON-formatted error responses.
+**Learning:** Lazy initialization of global state in concurrent environments must be synchronized using primitives like `sync.RWMutex` to prevent data races. Furthermore, standardizing error responses as JSON with `X-Content-Type-Options: nosniff` improves security by preventing MIME-sniffing.
+**Prevention:** Use a synchronized lazy-loading pattern (double-checked locking) for global caches and centralize error response logic in a helper function that enforces security headers and JSON formatting.
