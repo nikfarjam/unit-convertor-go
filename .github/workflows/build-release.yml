@@ -1,3 +1,9 @@
+# TODO:
+# - Split to build and release pipelines
+# - Create Github release and push to GHCR as well
+# - Support different ports for different environments (e.g., 9090 for production, 8080 for staging)
+# - metric API endpoint for monitoring and health check endpoint for Kubernetes
+
 name: Build Unit Converter API
 env:
   GO_VERSION: "1.26.2"
@@ -131,3 +137,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "${api_version}"
           git push origin "${api_version}"
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ needs.set-ci-variables.outputs.API_VERSION }}
+          release_name: "Release ${{ needs.set-ci-variables.outputs.API_VERSION }}"
+          body: "Release ${{ needs.set-ci-variables.outputs.API_VERSION }} created by workflow."
+          draft: false
+          prerelease: false
