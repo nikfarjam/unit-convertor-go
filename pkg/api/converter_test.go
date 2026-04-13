@@ -60,8 +60,13 @@ func TestConverterHandler_InvalidJSON(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
 	}
 
-	if w.Body.String() != "bad request\n" {
-		t.Errorf("expected body 'bad request', got %q", w.Body.String())
+	var resp ErrorResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if resp.Error != "bad request" {
+		t.Errorf("expected error 'bad request', got %q", resp.Error)
 	}
 }
 
@@ -82,8 +87,13 @@ func TestConverterHandler_InvalidFromUnit(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
 	}
 
-	if w.Body.String() != "invalid from\n" {
-		t.Errorf("expected body 'invalid from', got %q", w.Body.String())
+	var resp ErrorResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if resp.Error != "invalid from" {
+		t.Errorf("expected error 'invalid from', got %q", resp.Error)
 	}
 }
 
@@ -104,8 +114,13 @@ func TestConverterHandler_InvalidToUnit(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
 	}
 
-	if w.Body.String() != "invalid to\n" {
-		t.Errorf("expected body 'invalid to', got %q", w.Body.String())
+	var resp ErrorResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if resp.Error != "invalid to" {
+		t.Errorf("expected error 'invalid to', got %q", resp.Error)
 	}
 }
 
@@ -165,7 +180,50 @@ func TestConverterHandler_BodyTooLarge(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
 	}
 
-	if w.Body.String() != "bad request\n" {
-		t.Errorf("expected body 'bad request', got %q", w.Body.String())
+	var resp ErrorResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if resp.Error != "bad request" {
+		t.Errorf("expected error 'bad request', got %q", resp.Error)
+	}
+}
+
+type errorResponseWriter struct {
+	http.ResponseWriter
+}
+
+func (e *errorResponseWriter) Write(b []byte) (int, error) {
+	return 0, http.ErrHandlerTimeout
+}
+
+func (e *errorResponseWriter) Header() http.Header {
+	return e.ResponseWriter.Header()
+}
+
+func (e *errorResponseWriter) WriteHeader(statusCode int) {
+	e.ResponseWriter.WriteHeader(statusCode)
+}
+
+func TestConverterHandler_EncodeError(t *testing.T) {
+	reqBody := ConverterRequest{
+		Value: 0,
+		From:  "celsius",
+		To:    "fahrenheit",
+	}
+	body, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, api_url, bytes.NewReader(body))
+	w := httptest.NewRecorder()
+	ew := &errorResponseWriter{ResponseWriter: w}
+
+	ConverterHandler(ew, req)
+
+	// In case of encode error, it should try to write a JSON error
+	// But our errorResponseWriter fails on Write.
+	// We check if the code was set to 500
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, w.Code)
 	}
 }
