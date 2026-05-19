@@ -31,27 +31,27 @@ func ConverterHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := dec.Decode(req); err != nil {
 		slog.Error("Error: bad request", "error", err)
-		http.Error(w, "bad request", http.StatusBadRequest)
+		WriteJSONError(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	slog.Debug("Request received", "from", req.From, "to", req.To)
 
 	if strings.ToUpper(req.From) != "CELSIUS" && strings.ToUpper(req.From) != "FAHRENHEIT" {
 		slog.Error("Error: invalid unit", "unit", req.From)
-		http.Error(w, "invalid from", http.StatusBadRequest)
+		WriteJSONError(w, "invalid from", http.StatusBadRequest)
 		return
 	}
 
 	if strings.ToUpper(req.To) != "CELSIUS" && strings.ToUpper(req.To) != "FAHRENHEIT" {
 		slog.Error("Error: invalid unit", "unit", req.To)
-		http.Error(w, "invalid to", http.StatusBadRequest)
+		WriteJSONError(w, "invalid to", http.StatusBadRequest)
 		return
 	}
 
 	result, err := converter.ConvertUnit(req.From, req.To, req.Value)
 	if err != nil {
 		slog.Error("Error: not able to process request", "error", err)
-		http.Error(w, "not able to process request", http.StatusBadRequest)
+		WriteJSONError(w, "not able to process request", http.StatusBadRequest)
 		return
 	}
 
@@ -63,7 +63,7 @@ func ConverterHandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(resp); err != nil {
 		slog.Error("Error: not able to encode response", "error", err)
-		http.Error(w, "not able to process request", http.StatusInternalServerError)
+		WriteJSONError(w, "not able to process request", http.StatusInternalServerError)
 		return
 	}
 }
