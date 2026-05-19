@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 type VersionResponse struct {
@@ -15,23 +16,37 @@ type VersionResponse struct {
 
 var versionRegex = regexp.MustCompile(`^v?\d+(\.\d+)*(-[\w\.-]+)?$`)
 
-var cacheVersion string = ""
+var (
+	cacheVersion string = ""
+	mu           sync.RWMutex
+)
 
 func VersionHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	slog.Debug("Received request", "method", r.Method, "path", r.URL.Path)
-	if cacheVersion == "" {
-		cacheVersion = loadVersion()
+
+	mu.RLock()
+	v := cacheVersion
+	mu.RUnlock()
+
+	if v == "" {
+		mu.Lock()
+		if cacheVersion == "" {
+			cacheVersion = loadVersion()
+		}
+		v = cacheVersion
+		mu.Unlock()
 	}
+
 	resp := VersionResponse{
-		Version: cacheVersion,
+		Version: v,
 	}
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(resp); err != nil {
 		slog.Error("Error: not able to encode response", "error", err)
-		http.Error(w, "not able to process request", http.StatusInternalServerError)
+		WriteJSONError(w, "not able to process request", http.StatusInternalServerError)
 		return
 	}
 }

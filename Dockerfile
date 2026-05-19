@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Build the application from source
-FROM golang:1.26.2-alpine3.23 AS build-stage
+FROM golang:1.26.3-alpine3.23 AS build-stage
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ RUN go mod tidy && CGO_ENABLED=0 GOOS=linux go build -o api-server main.go
 FROM build-stage AS run-test-stage
 RUN go test -v ./...
 
-FROM gcr.io/distroless/static-debian12 AS production
+FROM cgr.dev/chainguard/busybox:latest AS production
 
 WORKDIR /app
 
