@@ -8,6 +8,10 @@ on:
         branches:
             - main
             - develop
+    workflow_run:
+        workflows: ["Lint, Test and Build Unit Converter API"]
+        types:
+            - completed
 
 jobs:
     set-ci-variables:
