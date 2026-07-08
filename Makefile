@@ -30,9 +30,10 @@ lint:
 	go mod verify
 	go fmt ./...
 
+BUILDX_ARGS ?= --load --attest type=sbom --attest type=provenance
 build-image:
-	@echo "\nBuild Docker image '$(IMAGE_TAG)'."
-	docker build -t $(IMAGE_TAG) -f Dockerfile .
+	@echo "\nBuild Docker image '$(IMAGE_TAG)' with SBOM."
+	docker buildx build $(BUILDX_ARGS) -t $(IMAGE_TAG) -f Dockerfile .
 
 clean:
 	rm -rf ./bin
