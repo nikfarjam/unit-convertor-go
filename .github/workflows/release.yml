@@ -1,4 +1,4 @@
-name: Release Unit Converter API
+name: 🚀 Release Unit Converter API
 
 env:
     GO_VERSION: "1.27.4"
@@ -16,8 +16,9 @@ jobs:
             API_VERSION: ${{ steps.set-env.outputs.API_VERSION }}
             IMAGE_TAG: ${{ steps.set-env.outputs.IMAGE_TAG }}
         steps:
-            - uses: actions/checkout@v6
-            - name: Set Pipeline environment variables
+            - name: 📥 Checkout
+              uses: actions/checkout@v6
+            - name: ⚙️ Set pipeline environment variables
               id: set-env
               shell: bash
               run: |
@@ -46,13 +47,14 @@ jobs:
         permissions:
             contents: read
         steps:
-            - uses: actions/checkout@v6
-            - name: Login to Docker Hub
+            - name: 📥 Checkout
+              uses: actions/checkout@v6
+            - name: 🔐 Login to Docker Hub
               uses: docker/login-action@v4
               with:
                   username: ${{ vars.DOCKERHUB_USERNAME }}
                   password: ${{ secrets.DOCKERHUB_TOKEN }}
-            - name: Build and push Docker image
+            - name: 🐳 Build and push Docker image
               id: build
               shell: bash
               run: |
@@ -65,13 +67,14 @@ jobs:
         permissions:
             contents: read
         steps:
-            - uses: actions/checkout@v6
-            - name: Login to Docker Hub
+            - name: 📥 Checkout
+              uses: actions/checkout@v6
+            - name: 🔐 Login to Docker Hub
               uses: docker/login-action@v3
               with:
                   username: ${{ vars.DOCKERHUB_USERNAME }}
                   password: ${{ secrets.DOCKERHUB_TOKEN }}
-            - name: Create and push multi-arch manifest
+            - name: 📦 Create and push multi-arch manifest
               shell: bash
               run: |
                   tag="${{ needs.set-ci-variables.outputs.IMAGE_TAG }}"
@@ -91,8 +94,9 @@ jobs:
         permissions:
             contents: write
         steps:
-            - uses: actions/checkout@v6
-            - name: Tag branch
+            - name: 📥 Checkout
+              uses: actions/checkout@v6
+            - name: 🏷️ Tag branch
               shell: bash
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -107,7 +111,7 @@ jobs:
                   git config user.email "github-actions[bot]@users.noreply.github.com"
                   git tag "${api_version}"
                   git push origin "${api_version}"
-            - name: Create GitHub Release
+            - name: 🎉 Create GitHub Release
               uses: actions/create-release@v1
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
