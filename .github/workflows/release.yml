@@ -113,6 +113,8 @@ jobs:
                   git push origin "${api_version}"
             - name: Create GitHub Release
               uses: actions/create-release@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                   tag_name: ${{ needs.set-ci-variables.outputs.API_VERSION }}
                   release_name: "Release ${{ needs.set-ci-variables.outputs.API_VERSION }}"
