@@ -4,7 +4,6 @@ env:
     GO_VERSION: "1.27.4"
 
 on:
-    pull_request:
     push:
 
 jobs:
@@ -39,3 +38,10 @@ jobs:
                   cache: "true"
             - name: Build
               run: make build
+
+    docker-build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - name: Build Docker image (single-arch verification)
+              run: make build-image IMAGE_TAG=unit-converter-api-lightweight:ci-build
