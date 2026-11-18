@@ -1,10 +1,9 @@
-name: Lint, Test and Build Unit Converter API
+name: 🧪 Lint, Test and Build Unit Converter API
 
 env:
-    GO_VERSION: "1.26.4"
+    GO_VERSION: "1.27.4"
 
 on:
-    pull_request:
     push:
 
 jobs:
@@ -12,18 +11,18 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
-            - name: Set up Go
+            - name: ⚙️ Set up Go
               uses: actions/setup-go@v6
               with:
                   go-version: "${{ env.GO_VERSION }}"
                   cache: "true"
-            - name: Lint
+            - name: 🔍 Lint
               run: make lint
-            - name: Test
+            - name: 🧪 Test
               run: |
                   make coverage-ci
                   make coverage-codecov
-            - name: Upload coverage reports to Codecov
+            - name: 📊 Upload coverage reports to Codecov
               uses: codecov/codecov-action@v6
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
@@ -32,10 +31,17 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
-            - name: Set up Go
+            - name: ⚙️ Set up Go
               uses: actions/setup-go@v6
               with:
                   go-version: "${{ env.GO_VERSION }}"
                   cache: "true"
-            - name: Build
+            - name: 🔨 Build
               run: make build
+
+    docker-build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - name: 🐳 Build Docker image (single-arch verification)
+              run: make build-image IMAGE_TAG=unit-converter-api-lightweight:ci-build
