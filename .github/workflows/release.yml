@@ -60,7 +60,7 @@ jobs:
               id: build
               shell: bash
               run: |
-                  make build-image IMAGE_TAG=${{ needs.set-ci-variables.outputs.IMAGE_TAG }}-${{ matrix.archSuffix }}
+                  make build-image-sbom IMAGE_TAG=${{ needs.set-ci-variables.outputs.IMAGE_TAG }}-${{ matrix.archSuffix }}
                   docker push ${{ needs.set-ci-variables.outputs.IMAGE_TAG }}-${{ matrix.archSuffix }}
 
     create-manifest:
