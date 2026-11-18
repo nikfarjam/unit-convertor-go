@@ -1,7 +1,7 @@
 name: Release Unit Converter API
 
 env:
-    GO_VERSION: "1.26.4"
+    GO_VERSION: "1.27.4"
 
 on:
     push:
