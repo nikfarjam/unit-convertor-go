@@ -4,7 +4,9 @@ env:
     GO_VERSION: "1.27.4"
 
 on:
-    push:
+    pull_request:
+        types:
+            - closed
         branches:
             - main
             - develop
@@ -12,6 +14,7 @@ on:
 jobs:
     set-ci-variables:
         runs-on: ubuntu-latest
+        if: github.event.pull_request.merged == true
         outputs:
             API_VERSION: ${{ steps.set-env.outputs.API_VERSION }}
             IMAGE_TAG: ${{ steps.set-env.outputs.IMAGE_TAG }}
@@ -24,9 +27,9 @@ jobs:
               run: |
                   image_name="${{ vars.DOCKER_HUB_REPOSITORY }}/unit-converter-api-lightweight"
                   api_version="$(cat version)"
-                  if [[ "${GITHUB_REF}" == refs/heads/develop ]]; then
+                  if [[ "${GITHUB_BASE_REF}" == develop ]]; then
                     image_tag="${image_name}:${api_version}-beta"
-                  elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
+                  elif [[ "${GITHUB_BASE_REF}" == main ]]; then
                     image_tag="${image_name}:${api_version}"
                   else
                     image_tag="${image_name}:test"
@@ -65,7 +68,7 @@ jobs:
     tag-branch:
         runs-on: ubuntu-latest
         needs: ["set-ci-variables"]
-        if: github.ref == 'refs/heads/main'
+        if: github.base_ref == 'main'
         permissions:
             contents: write
         steps:
