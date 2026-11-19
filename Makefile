@@ -34,6 +34,10 @@ build-image:
 	@echo "\nBuild Docker image '$(IMAGE_TAG)'."
 	docker build -t $(IMAGE_TAG) -f Dockerfile .
 
+build-image-sbom:
+	@echo "\nBuild Docker image '$(IMAGE_TAG)' with SBOM."
+	docker buildx build --load --attest type=sbom --attest type=provenance -t $(IMAGE_TAG) -f Dockerfile .
+
 clean:
 	rm -rf ./bin
 	rm -f coverage.out
