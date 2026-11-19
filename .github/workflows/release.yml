@@ -21,7 +21,7 @@ jobs:
             GHCR_IMAGE_TAG: ${{ steps.set-env.outputs.GHCR_IMAGE_TAG }}
         steps:
             - name: 📥 Checkout
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
             - name: ⚙️ Set pipeline environment variables
               id: set-env
               shell: bash
@@ -49,7 +49,7 @@ jobs:
             packages: write
         steps:
             - name: 📥 Checkout
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
             - name: 🔐 Login to Docker Hub
               uses: docker/login-action@v4
               with:
@@ -62,11 +62,11 @@ jobs:
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
             - name: 🧰 Set up QEMU
-              uses: docker/setup-qemu-action@v3
+              uses: docker/setup-qemu-action@v4
             - name: ⚙️ Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
+              uses: docker/setup-buildx-action@v4
             - name: 🐳 Build and push multi-arch Docker image
-              uses: docker/build-push-action@v6
+              uses: docker/build-push-action@v7
               with:
                   context: .
                   file: Dockerfile
@@ -86,7 +86,7 @@ jobs:
             contents: write
         steps:
             - name: 📥 Checkout
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
             - name: 🏷️ Tag branch
               shell: bash
               env:
@@ -103,12 +103,12 @@ jobs:
                   git tag "${api_version}"
                   git push origin "${api_version}"
             - name: 🎉 Create GitHub Release
-              uses: actions/create-release@v1
+              uses: softprops/action-gh-release@v3
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                   tag_name: ${{ needs.set-ci-variables.outputs.API_VERSION }}
-                  release_name: "Release ${{ needs.set-ci-variables.outputs.API_VERSION }}"
+                  name: "Release ${{ needs.set-ci-variables.outputs.API_VERSION }}"
                   body: "Release ${{ needs.set-ci-variables.outputs.API_VERSION }} created by workflow."
                   draft: false
                   prerelease: false
