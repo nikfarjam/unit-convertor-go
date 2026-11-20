@@ -12,12 +12,17 @@ import (
 
 type VersionResponse struct {
 	Version string `json:"version"`
+	Commit  string `json:"commit"`
 }
 
 var versionRegex = regexp.MustCompile(`^v?\d+(\.\d+)*(-[\w\.-]+)?$`)
+var commitRegex = regexp.MustCompile(`^[0-9a-f]{7,40}$`)
+
+const defaultCommit = "develop"
 
 var (
 	cacheVersion string = ""
+	cacheCommit  string = ""
 	mu           sync.RWMutex
 )
 
@@ -29,19 +34,22 @@ func VersionHandler(w http.ResponseWriter, r *http.Request) {
 
 	mu.RLock()
 	v := cacheVersion
+	c := cacheCommit
 	mu.RUnlock()
 
 	if v == "" {
 		mu.Lock()
 		if cacheVersion == "" {
-			cacheVersion = loadVersion()
+			cacheVersion, cacheCommit = loadVersion()
 		}
 		v = cacheVersion
+		c = cacheCommit
 		mu.Unlock()
 	}
 
 	resp := VersionResponse{
 		Version: v,
+		Commit:  c,
 	}
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(resp); err != nil {
@@ -51,7 +59,7 @@ func VersionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func loadVersion() string {
+func loadVersion() (string, string) {
 	versionPath := os.Getenv("UC_VERSION_PATH")
 	if versionPath == "" {
 		versionPath = "version"
@@ -59,12 +67,26 @@ func loadVersion() string {
 	versionValue, err := os.ReadFile(versionPath)
 	if err != nil {
 		slog.Error("Error: not able to read version file", "error", err)
-		return "Unknown"
+		return "Unknown", defaultCommit
 	}
-	version := strings.TrimSpace(string(versionValue))
+
+	lines := strings.SplitN(strings.TrimRight(string(versionValue), "\r\n"), "\n", 2)
+
+	version := strings.TrimSpace(lines[0])
 	if !versionRegex.MatchString(version) {
 		slog.Error("Error: version format is invalid", "version", version)
-		return "Unknown"
+		return "Unknown", defaultCommit
 	}
-	return version
+
+	commit := defaultCommit
+	if len(lines) == 2 {
+		candidate := strings.TrimSpace(lines[1])
+		if commitRegex.MatchString(candidate) {
+			commit = candidate
+		} else {
+			slog.Warn("Commit hash format is invalid, using default", "commit", candidate)
+		}
+	}
+
+	return version, commit
 }
